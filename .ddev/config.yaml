@@ -1,4 +1,4 @@
-name: plugin-name
+name: site-monitor-dashboard
 type: php
 docroot: ""
 php_version: "8.4"

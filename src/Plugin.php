@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Plugin_Name;
+namespace Apermo\SiteMonitorDashboard;
 
 /**
  * Main plugin class.
