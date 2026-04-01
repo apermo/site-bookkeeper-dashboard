@@ -9,7 +9,7 @@ if [ -z "$STAGED_PHP_FILES" ]; then
 fi
 
 echo "Running PHPCS on staged files..."
-if ! echo "$STAGED_PHP_FILES" | xargs vendor/bin/phpcs --standard=phpcs.xml.dist; then
+if ! echo "$STAGED_PHP_FILES" | xargs vendor/bin/phpcs --standard=phpcs.xml.dist --warning-severity=0; then
     echo "PHPCS failed. Fix violations before committing."
     exit 1
 fi

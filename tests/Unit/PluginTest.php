@@ -104,6 +104,11 @@ class PluginTest extends TestCase {
 	 * @return void
 	 */
 	public function test_boot(): void {
+		Functions\stubs( [ 'is_admin' => true ] );
+
+		Functions\expect( 'add_action' )
+			->times( 4 );
+
 		Plugin::boot();
 		$this->assertTrue( true );
 	}

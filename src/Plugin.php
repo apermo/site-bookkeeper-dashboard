@@ -67,5 +67,9 @@ class Plugin {
 	 */
 	public static function boot(): void {
 		Settings::init();
+
+		if ( is_admin() ) {
+			Admin::init();
+		}
 	}
 }

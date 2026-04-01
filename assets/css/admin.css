@@ -1,0 +1,67 @@
+/**
+ * Site Monitor Dashboard admin styles.
+ */
+
+/* Stale sites */
+.smd-stale {
+	opacity: 0.6;
+}
+
+.smd-stale td {
+	color: #a7aaad;
+}
+
+/* Pending updates highlight */
+.smd-has-updates {
+	display: inline-block;
+	background: #dba617;
+	color: #fff;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-weight: 600;
+}
+
+/* WP version update available */
+.smd-update-available {
+	color: #dba617;
+	font-weight: 600;
+}
+
+/* Status badges for custom fields */
+.smd-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.smd-badge-good {
+	background: #00a32a;
+	color: #fff;
+}
+
+.smd-badge-warning {
+	background: #dba617;
+	color: #fff;
+}
+
+.smd-badge-critical {
+	background: #d63638;
+	color: #fff;
+}
+
+/* Detail page sections */
+.smd-detail-section {
+	margin-bottom: 20px;
+}
+
+.smd-detail-section h2 {
+	margin-bottom: 10px;
+}
+
+/* Key-value table for custom fields */
+.smd-kv-table th {
+	width: 200px;
+	text-align: left;
+}
