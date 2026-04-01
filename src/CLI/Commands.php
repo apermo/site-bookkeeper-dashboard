@@ -462,7 +462,7 @@ class Commands {
 		format_items(
 			'table',
 			$users,
-			[ 'login', 'display_name', 'email', 'role' ],
+			[ 'user_login', 'display_name', 'email', 'role' ],
 		);
 	}
 
@@ -485,7 +485,7 @@ class Commands {
 		format_items(
 			'table',
 			$roles,
-			[ 'name', 'custom', 'modified', 'capability_count' ],
+			[ 'name', 'is_custom', 'is_modified' ],
 		);
 	}
 
