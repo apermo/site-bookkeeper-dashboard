@@ -15,8 +15,14 @@ declare(strict_types=1);
 
 namespace Apermo\SiteMonitorDashboard;
 
+use WP_CLI;
+
 \defined( 'ABSPATH' ) || exit();
 
 require_once __DIR__ . '/vendor/autoload.php';
 
 Plugin::init( __FILE__ );
+
+if ( \defined( 'WP_CLI' ) && \WP_CLI ) {
+	WP_CLI::add_command( 'site-monitor', CLI\Commands::class );
+}
