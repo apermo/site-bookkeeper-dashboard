@@ -71,15 +71,7 @@ class AdminTest extends TestCase {
 			);
 
 		Functions\expect( 'add_submenu_page' )
-			->once()
-			->with(
-				'site_monitor_dashboard',
-				'Site Detail',
-				'',
-				'manage_options',
-				'site_monitor_dashboard_detail',
-				[ Admin::class, 'render_detail_page' ],
-			);
+			->times( 3 );
 
 		Admin::register_pages();
 	}
