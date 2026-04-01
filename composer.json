@@ -19,7 +19,8 @@
         "phpstan/extension-installer": "^1.4",
         "phpunit/phpunit": "^11.0",
         "szepeviktor/phpstan-wordpress": "^2.0",
-        "yoast/phpunit-polyfills": "^3.0"
+        "yoast/phpunit-polyfills": "^3.0",
+        "php-stubs/wp-cli-stubs": "^2.12"
     },
     "autoload": {
         "psr-4": {
