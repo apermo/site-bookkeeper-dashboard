@@ -37,11 +37,12 @@ class SiteDetail {
 	 */
 	private static function render_environment( array $site ): void {
 		$fields = [
-			'wp_version'  => 'WordPress Version',
-			'php_version' => 'PHP Version',
-			'db_version'  => 'Database Version',
-			'multisite'   => 'Multisite',
-			'site_url'    => 'Site URL',
+			'environment_type' => 'Environment',
+			'wp_version'       => 'WordPress Version',
+			'php_version'      => 'PHP Version',
+			'db_version'       => 'Database Version',
+			'multisite'        => 'Multisite',
+			'site_url'         => 'Site URL',
 		];
 
 		echo '<div class="smd-detail-section">';
@@ -193,7 +194,18 @@ class SiteDetail {
 			echo '<tr>';
 			echo '<th>' . esc_html( (string) ( $field['label'] ?? $field['key'] ?? '' ) ) . '</th>';
 			echo '<td>';
-			echo esc_html( (string) ( $field['value'] ?? '' ) );
+
+			$field_key = $field['key'] ?? '';
+			$field_value = (string) ( $field['value'] ?? '' );
+			if ( $field_key === 'site_health_url' && $field_value !== '' ) {
+				\printf(
+					'<a href="%s" target="_blank">%s</a>',
+					esc_url( $field_value ),
+					esc_html__( 'Open Site Health', 'site-bookkeeper-dashboard' ),
+				);
+			} else {
+				echo esc_html( $field_value );
+			}
 
 			$status = $field['status'] ?? '';
 			if ( $status !== '' ) {

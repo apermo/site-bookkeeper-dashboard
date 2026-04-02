@@ -135,6 +135,10 @@
 	width: 180px;
 }
 
+.column-environment_type {
+	width: 100px;
+}
+
 .column-network {
 	width: 150px;
 }

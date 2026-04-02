@@ -24,12 +24,13 @@ class SitesListTable {
 	 */
 	public function get_columns( array $sites = [] ): array {
 		$columns = [
-			'label'           => 'Site',
-			'wp_version'      => 'WordPress',
-			'php_version'     => 'PHP',
-			'pending_updates' => 'Pending Updates',
-			'last_seen'       => 'Last Seen',
-			'last_updated'    => 'Last Updated',
+			'label'            => 'Site',
+			'environment_type' => 'Environment',
+			'wp_version'       => 'WordPress',
+			'php_version'      => 'PHP',
+			'pending_updates'  => 'Pending Updates',
+			'last_seen'        => 'Last Seen',
+			'last_updated'     => 'Last Updated',
 		];
 
 		if ( $this->has_network_sites( $sites ) ) {
@@ -48,10 +49,11 @@ class SitesListTable {
 	 */
 	public function get_sortable_columns(): array {
 		return [
-			'label'       => [ 'label', false ],
-			'wp_version'  => [ 'wp_version', false ],
-			'php_version' => [ 'php_version', false ],
-			'last_seen'   => [ 'last_seen', true ],
+			'label'            => [ 'label', false ],
+			'environment_type' => [ 'environment_type', false ],
+			'wp_version'       => [ 'wp_version', false ],
+			'php_version'      => [ 'php_version', false ],
+			'last_seen'        => [ 'last_seen', true ],
 		];
 	}
 
