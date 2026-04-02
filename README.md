@@ -32,6 +32,17 @@ define( 'SITE_BOOKKEEPER_HUB_URL', 'https://monitor.example.tld' );
 define( 'SITE_BOOKKEEPER_CLIENT_TOKEN', 'your-client-token-here' );
 ```
 
+## Security
+
+The plugin enforces HTTPS for all communication with the hub. Both the settings page and the API client will reject
+plain HTTP URLs.
+
+For local development you can opt out by defining the following constant in `wp-config.php`:
+
+```php
+define( 'SITE_BOOKKEEPER_ALLOW_HTTP', true );
+```
+
 ## Features
 
 ### Sites Overview

@@ -139,12 +139,22 @@ class ApiClient {
 	/**
 	 * Make a cached HTTP GET request to the hub API.
 	 *
+	 * Refuses to send requests over plain HTTP unless the
+	 * SITE_BOOKKEEPER_ALLOW_HTTP constant is defined and truthy.
+	 *
 	 * @param string                $endpoint Relative API endpoint.
 	 * @param array<string, string> $params   Query parameters.
 	 *
 	 * @return array<string, mixed>
 	 */
 	private function request( string $endpoint, array $params = [] ): array {
+		if ( ! \str_starts_with( $this->base_url, 'https://' ) && ! Settings::http_is_allowed() ) {
+			return [
+				'error'   => 'https_required',
+				'message' => 'The hub URL must use HTTPS.',
+			];
+		}
+
 		$cache_key = self::CACHE_PREFIX . $endpoint;
 		if ( $params !== [] ) {
 			$cache_key .= '_' . \md5( (string) wp_json_encode( $params ) );

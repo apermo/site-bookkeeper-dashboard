@@ -174,7 +174,20 @@ class Settings {
 	}
 
 	/**
+	 * Check whether plain HTTP is allowed via constant.
+	 *
+	 * @return bool
+	 */
+	public static function http_is_allowed(): bool {
+		return \defined( 'SITE_BOOKKEEPER_ALLOW_HTTP' )
+			&& \constant( 'SITE_BOOKKEEPER_ALLOW_HTTP' );
+	}
+
+	/**
 	 * Sanitize the hub URL value.
+	 *
+	 * Rejects non-HTTPS URLs unless the SITE_BOOKKEEPER_ALLOW_HTTP
+	 * constant is defined and truthy.
 	 *
 	 * @param string $value Raw input.
 	 *
@@ -182,8 +195,19 @@ class Settings {
 	 */
 	public static function sanitize_hub_url( string $value ): string {
 		$value = esc_url_raw( \trim( $value ) );
+		$value = \rtrim( $value, '/' );
 
-		return \rtrim( $value, '/' );
+		if ( $value !== '' && ! \str_starts_with( $value, 'https://' ) && ! self::http_is_allowed() ) {
+			add_settings_error(
+				self::OPTION_HUB_URL,
+				'https_required',
+				__( 'The hub URL must use HTTPS.', 'site-bookkeeper-dashboard' ),
+			);
+
+			return self::get_hub_url_option();
+		}
+
+		return $value;
 	}
 
 	/**

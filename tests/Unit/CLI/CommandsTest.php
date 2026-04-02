@@ -7,6 +7,7 @@ namespace Apermo\SiteBookkeeperDashboard\Tests\Unit\CLI;
 use Apermo\SiteBookkeeperDashboard\ApiClient;
 use Apermo\SiteBookkeeperDashboard\CLI\Commands;
 use Brain\Monkey;
+use Brain\Monkey\Functions;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 
@@ -61,6 +62,8 @@ class CommandsTest extends TestCase {
 	 * @return void
 	 */
 	public function test_test_command_reports_success(): void {
+		Functions\stubs( [ 'get_option' => 'https://monitor.example.tld' ] );
+
 		$client = $this->create_mock_client();
 		$client->shouldReceive( 'get_sites' )
 			->once()
@@ -87,11 +90,43 @@ class CommandsTest extends TestCase {
 	}
 
 	/**
+	 * Verify test command warns when hub URL uses HTTP.
+	 *
+	 * @return void
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_test_command_warns_on_http_url(): void {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- User-facing constant.
+		\define( 'SITE_BOOKKEEPER_HUB_URL', 'http://insecure.example.tld' );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- User-facing constant.
+		\define( 'SITE_BOOKKEEPER_ALLOW_HTTP', true );
+
+		$client = $this->create_mock_client();
+		$client->shouldReceive( 'get_sites' )
+			->once()
+			->andReturn( [ 'sites' => [] ] );
+
+		$commands = $this->create_commands( $client );
+
+		$mock_cli = Mockery::mock( 'alias:WP_CLI' );
+		$mock_cli->shouldReceive( 'warning' )
+			->once()
+			->with( Mockery::pattern( '/HTTPS/' ) );
+		$mock_cli->shouldReceive( 'success' )->once();
+
+		$commands->test( [], [] );
+	}
+
+	/**
 	 * Verify test command reports error on API failure.
 	 *
 	 * @return void
 	 */
 	public function test_test_command_reports_error(): void {
+		Functions\stubs( [ 'get_option' => 'https://monitor.example.tld' ] );
+
 		$client = $this->create_mock_client();
 		$client->shouldReceive( 'get_sites' )
 			->once()

@@ -457,6 +457,62 @@ class ApiClientTest extends TestCase {
 	}
 
 	/**
+	 * Verify API client refuses HTTP without the constant.
+	 *
+	 * @return void
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_request_refuses_http_without_constant(): void {
+		$client = new ApiClient( 'http://insecure.example.tld', 'test-token' );
+		$result = $client->get_sites();
+
+		$this->assertArrayHasKey( 'error', $result );
+		$this->assertSame( 'https_required', $result['error'] );
+	}
+
+	/**
+	 * Verify API client allows HTTP with the constant.
+	 *
+	 * @return void
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_request_allows_http_with_constant(): void {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- User-facing constant.
+		\define( 'SITE_BOOKKEEPER_ALLOW_HTTP', true );
+
+		$body = '{"sites":[]}';
+
+		Functions\expect( 'get_transient' )->once()->andReturn( false );
+
+		Functions\expect( 'wp_remote_get' )
+			->once()
+			->with(
+				'http://insecure.example.tld/sites',
+				Mockery::type( 'array' ),
+			)
+			->andReturn(
+				[
+					'response' => [ 'code' => 200 ],
+					'body'     => $body,
+				],
+			);
+
+		Functions\expect( 'is_wp_error' )->once()->andReturn( false );
+		Functions\expect( 'wp_remote_retrieve_response_code' )->once()->andReturn( 200 );
+		Functions\expect( 'wp_remote_retrieve_body' )->once()->andReturn( $body );
+		Functions\expect( 'set_transient' )->once();
+
+		$client = new ApiClient( 'http://insecure.example.tld', 'test-token' );
+		$result = $client->get_sites();
+
+		$this->assertArrayHasKey( 'sites', $result );
+	}
+
+	/**
 	 * Stub an uncached successful API request.
 	 *
 	 * @param string $cache_key Expected transient key.

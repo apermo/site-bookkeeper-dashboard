@@ -231,6 +231,69 @@ class SettingsTest extends TestCase {
 	}
 
 	/**
+	 * Verify sanitize_hub_url rejects HTTP URLs.
+	 *
+	 * @return void
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_sanitize_hub_url_rejects_http(): void {
+		Functions\stubs( [ 'esc_url_raw' => static fn( string $url ): string => $url ] );
+
+		Functions\expect( 'get_option' )
+			->once()
+			->with( 'site_bookkeeper_dashboard_hub_url', '' )
+			->andReturn( 'https://old.example.tld' );
+
+		Functions\expect( 'add_settings_error' )
+			->once()
+			->with(
+				'site_bookkeeper_dashboard_hub_url',
+				'https_required',
+				Mockery::type( 'string' ),
+			);
+
+		Functions\stubs( [ '__' => static fn( string $text ): string => $text ] );
+
+		$result = Settings::sanitize_hub_url( 'http://insecure.example.tld' );
+
+		$this->assertSame( 'https://old.example.tld', $result );
+	}
+
+	/**
+	 * Verify sanitize_hub_url accepts HTTPS URLs.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_hub_url_accepts_https(): void {
+		Functions\stubs( [ 'esc_url_raw' => static fn( string $url ): string => $url ] );
+
+		$result = Settings::sanitize_hub_url( 'https://secure.example.tld' );
+
+		$this->assertSame( 'https://secure.example.tld', $result );
+	}
+
+	/**
+	 * Verify sanitize_hub_url allows HTTP when constant is set.
+	 *
+	 * @return void
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_sanitize_hub_url_allows_http_with_constant(): void {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- User-facing constant.
+		\define( 'SITE_BOOKKEEPER_ALLOW_HTTP', true );
+
+		Functions\stubs( [ 'esc_url_raw' => static fn( string $url ): string => $url ] );
+
+		$result = Settings::sanitize_hub_url( 'http://local.example.tld' );
+
+		$this->assertSame( 'http://local.example.tld', $result );
+	}
+
+	/**
 	 * Verify sanitize_token trims whitespace.
 	 *
 	 * @return void

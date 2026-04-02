@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Apermo\SiteBookkeeperDashboard\CLI;
 
 use Apermo\SiteBookkeeperDashboard\ApiClient;
+use Apermo\SiteBookkeeperDashboard\Settings;
 use WP_CLI;
 // phpcs:ignore Universal.UseStatements.DisallowUseFunction.FoundWithoutAlias -- WP-CLI utility function.
 use function WP_CLI\Utils\format_items;
@@ -400,6 +401,14 @@ class Commands {
 	 * @return void
 	 */
 	public function test( array $args, array $assoc_args ): void {
+		$hub_url = Settings::get_hub_url();
+
+		if ( $hub_url !== '' && ! \str_starts_with( $hub_url, 'https://' ) ) {
+			WP_CLI::warning(
+				'The hub URL does not use HTTPS. This is insecure and only intended for local development.',
+			);
+		}
+
 		$data = $this->client->get_sites();
 
 		if ( isset( $data['error'] ) ) {
