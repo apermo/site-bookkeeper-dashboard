@@ -49,17 +49,10 @@ class ThemeReport {
 	public function column_sites( array $item ): string {
 		$sites = $item['sites'] ?? [];
 		if ( ! \is_array( $sites ) ) {
-			return '—';
+			return '0';
 		}
 
-		$labels = [];
-		foreach ( $sites as $site ) {
-			if ( \is_array( $site ) ) {
-				$labels[] = esc_html( (string) ( $site['label'] ?? \preg_replace( '#^https?://#', '', $site['site_url'] ?? '' ) ) );
-			}
-		}
-
-		return \implode( ', ', $labels );
+		return esc_html( (string) \count( $sites ) );
 	}
 
 	/**
@@ -82,20 +75,16 @@ class ThemeReport {
 			}
 
 			$version = (string) $site['version'];
-			$label   = (string) ( $site['label'] ?? \preg_replace( '#^https?://#', '', $site['site_url'] ?? '' ) );
+			$domain  = (string) \preg_replace( '#^https?://#', '', $site['site_url'] ?? '' );
 
-			$by_version[ $version ][] = $label;
-		}
-
-		if ( \count( $by_version ) === 1 ) {
-			return esc_html( \array_key_first( $by_version ) );
+			$by_version[ $version ][] = $domain;
 		}
 
 		$out = '<ul style="margin:0">';
-		foreach ( $by_version as $version => $labels ) {
+		foreach ( $by_version as $version => $domains ) {
 			$out .= '<li>' . esc_html( $version ) . '<ul>';
-			foreach ( $labels as $label ) {
-				$out .= '<li>' . esc_html( $label ) . '</li>';
+			foreach ( $domains as $domain ) {
+				$out .= '<li>' . esc_html( $domain ) . '</li>';
 			}
 			$out .= '</ul></li>';
 		}

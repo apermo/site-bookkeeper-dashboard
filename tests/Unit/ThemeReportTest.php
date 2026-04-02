@@ -68,23 +68,19 @@ class ThemeReportTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function test_column_sites_renders_names(): void {
+	public function test_column_sites_renders_count(): void {
 		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
 
 		$report = new ThemeReport();
 		$item = [
 			'sites' => [
 				[ 'site_url' => 'https://one.example.tld' ],
-				[
-					'site_url' => 'https://two.example.tld',
-					'label' => 'Site Two',
-				],
+				[ 'site_url' => 'https://two.example.tld' ],
 			],
 		];
 
 		$output = $report->column_sites( $item );
-		$this->assertStringContainsString( 'one.example.tld', $output );
-		$this->assertStringContainsString( 'Site Two', $output );
+		$this->assertSame( '2', $output );
 	}
 
 	/**
