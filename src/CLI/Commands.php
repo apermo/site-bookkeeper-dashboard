@@ -27,6 +27,12 @@ use function WP_CLI\Utils\format_items;
  *     # Cross-site plugin report
  *     wp site-bookkeeper plugins --outdated
  *
+ *     # List all networks
+ *     wp site-bookkeeper networks
+ *
+ *     # Show detail for a single network
+ *     wp site-bookkeeper network <id>
+ *
  *     # Test hub connection
  *     wp site-bookkeeper test
  */
@@ -59,6 +65,30 @@ class Commands {
 		'name',
 		'site_count',
 		'versions',
+	];
+
+	/**
+	 * Columns displayed in the networks table.
+	 *
+	 * @var array<int, string>
+	 */
+	private const NETWORKS_COLUMNS = [
+		'id',
+		'main_site_url',
+		'label',
+		'subsite_count',
+		'last_seen',
+	];
+
+	/**
+	 * Network info fields for the network detail view.
+	 *
+	 * @var array<int, string>
+	 */
+	private const NETWORK_INFO_FIELDS = [
+		'main_site_url',
+		'subsite_count',
+		'last_seen',
 	];
 
 	/**
@@ -273,6 +303,85 @@ class Commands {
 		$format = $assoc_args['format'] ?? 'table';
 
 		format_items( $format, $items, self::REPORT_COLUMNS );
+	}
+
+	/**
+	 * List all monitored networks.
+	 *
+	 * Displays a table of all WordPress multisite networks
+	 * known to the central monitoring hub.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--format=<format>]
+	 * : Output format.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - csv
+	 *   - json
+	 *   - yaml
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp site-bookkeeper networks
+	 *     wp site-bookkeeper networks --format=json
+	 *
+	 * @param array<int, string>    $args       Positional arguments.
+	 * @param array<string, string> $assoc_args Associative arguments.
+	 *
+	 * @return void
+	 */
+	public function networks( array $args, array $assoc_args ): void {
+		$data = $this->client->get_networks();
+
+		if ( isset( $data['error'] ) ) {
+			WP_CLI::error( $this->format_error( $data ) );
+			return;
+		}
+
+		$networks = $data['networks'] ?? [];
+		$format   = $assoc_args['format'] ?? 'table';
+
+		format_items( $format, $networks, self::NETWORKS_COLUMNS );
+	}
+
+	/**
+	 * Show full detail for a single network.
+	 *
+	 * Displays network info, network-activated plugins,
+	 * super admins, network settings, and subsites.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>
+	 * : The network UUID.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp site-bookkeeper network net-uuid-1
+	 *
+	 * @param array<int, string>    $args       Positional arguments.
+	 * @param array<string, string> $assoc_args Associative arguments.
+	 *
+	 * @return void
+	 */
+	public function network( array $args, array $assoc_args ): void {
+		$network_id = $args[0];
+		$network    = $this->client->get_network( $network_id );
+
+		if ( isset( $network['error'] ) ) {
+			WP_CLI::error( $this->format_error( $network ) );
+			return;
+		}
+
+		$this->render_network_info( $network );
+		$this->render_network_plugins_section( $network );
+		$this->render_super_admins_section( $network );
+		$this->render_network_settings_section( $network );
+		$this->render_subsites_section( $network );
 	}
 
 	/**
@@ -509,6 +618,131 @@ class Commands {
 			'table',
 			$fields,
 			[ 'key', 'label', 'value', 'status' ],
+		);
+	}
+
+	/**
+	 * Render the network info section.
+	 *
+	 * @param array<string, mixed> $network Network data.
+	 *
+	 * @return void
+	 */
+	private function render_network_info( array $network ): void {
+		WP_CLI::log( '' );
+		WP_CLI::log( '--- Network Info ---' );
+
+		$rows = [];
+		foreach ( self::NETWORK_INFO_FIELDS as $field ) {
+			if ( ! isset( $network[ $field ] ) ) {
+				continue;
+			}
+
+			$value = $network[ $field ];
+			if ( \is_bool( $value ) ) {
+				$value = $value ? 'Yes' : 'No';
+			}
+
+			$rows[] = [
+				'field' => $field,
+				'value' => (string) $value,
+			];
+		}
+
+		if ( $rows !== [] ) {
+			format_items( 'table', $rows, [ 'field', 'value' ] );
+		}
+	}
+
+	/**
+	 * Render the network plugins section.
+	 *
+	 * @param array<string, mixed> $network Network data.
+	 *
+	 * @return void
+	 */
+	private function render_network_plugins_section( array $network ): void {
+		$plugins = $network['network_plugins'] ?? [];
+		if ( ! \is_array( $plugins ) || $plugins === [] ) {
+			return;
+		}
+
+		WP_CLI::log( '' );
+		WP_CLI::log( '--- Network-Activated Plugins ---' );
+
+		format_items(
+			'table',
+			$plugins,
+			[ 'slug', 'name', 'version', 'update_available' ],
+		);
+	}
+
+	/**
+	 * Render the super admins section.
+	 *
+	 * @param array<string, mixed> $network Network data.
+	 *
+	 * @return void
+	 */
+	private function render_super_admins_section( array $network ): void {
+		$admins = $network['super_admins'] ?? [];
+		if ( ! \is_array( $admins ) || $admins === [] ) {
+			return;
+		}
+
+		WP_CLI::log( '' );
+		WP_CLI::log( '--- Super Admins ---' );
+
+		format_items(
+			'table',
+			$admins,
+			[ 'user_login', 'display_name', 'email' ],
+		);
+	}
+
+	/**
+	 * Render the network settings section.
+	 *
+	 * @param array<string, mixed> $network Network data.
+	 *
+	 * @return void
+	 */
+	private function render_network_settings_section( array $network ): void {
+		$settings = $network['network_settings'] ?? [];
+		if ( ! \is_array( $settings ) || $settings === [] ) {
+			return;
+		}
+
+		WP_CLI::log( '' );
+		WP_CLI::log( '--- Network Settings ---' );
+
+		format_items(
+			'table',
+			$settings,
+			[ 'key', 'label', 'value' ],
+		);
+	}
+
+	/**
+	 * Render the subsites section.
+	 *
+	 * @param array<string, mixed> $network Network data.
+	 *
+	 * @return void
+	 */
+	private function render_subsites_section( array $network ): void {
+		$subsites = $network['subsites'] ?? [];
+		if ( ! \is_array( $subsites ) || $subsites === [] ) {
+			return;
+		}
+
+		WP_CLI::log( '' );
+		WP_CLI::log( '--- Subsites ---' );
+
+		format_items(
+			'table',
+			$subsites,
+			[ 'id', 'site_url', 'label' ],
 		);
 	}
 

@@ -490,6 +490,190 @@ class CommandsTest extends TestCase {
 	}
 
 	/**
+	 * Verify networks command calls format_items with data.
+	 *
+	 * @return void
+	 */
+	public function test_networks_command_formats_items(): void {
+		$networks = [ $this->create_network_fixture() ];
+
+		$client = $this->create_mock_client();
+		$client->shouldReceive( 'get_networks' )
+			->once()
+			->andReturn( [ 'networks' => $networks ] );
+
+		$commands = $this->create_commands( $client );
+
+		$format_called = false;
+		$this->mock_format_items(
+			function ( string $format, array $items, array $columns ) use ( &$format_called ): void {
+				$format_called = true;
+				$this->assert_networks_format( $format, $items, $columns );
+			},
+		);
+
+		$commands->networks( [], [] );
+
+		$this->assertTrue( $format_called, 'format_items was not called' );
+	}
+
+	/**
+	 * Verify networks command handles API error.
+	 *
+	 * @return void
+	 */
+	public function test_networks_command_handles_error(): void {
+		$client = $this->create_mock_client();
+		$client->shouldReceive( 'get_networks' )
+			->once()
+			->andReturn(
+				[
+					'error'   => 'http_error',
+					'message' => 'Unexpected HTTP 500 response.',
+				],
+			);
+
+		$commands = $this->create_commands( $client );
+
+		$this->expect_cli_error( 'http_error: Unexpected HTTP 500 response.' );
+
+		$commands->networks( [], [] );
+	}
+
+	/**
+	 * Verify network command calls API with correct ID.
+	 *
+	 * @return void
+	 */
+	public function test_network_command_calls_api_with_id(): void {
+		$network_data = $this->create_network_detail_fixture();
+
+		$client = $this->create_mock_client();
+		$client->shouldReceive( 'get_network' )
+			->once()
+			->with( 'net-uuid-1' )
+			->andReturn( $network_data );
+
+		$commands = $this->create_commands( $client );
+
+		$this->mock_format_items(
+			static function (): void {
+				// Accept any call.
+			},
+		);
+
+		$commands->network( [ 'net-uuid-1' ], [] );
+	}
+
+	/**
+	 * Verify network command handles API error.
+	 *
+	 * @return void
+	 */
+	public function test_network_command_handles_error(): void {
+		$client = $this->create_mock_client();
+		$client->shouldReceive( 'get_network' )
+			->once()
+			->with( 'net-uuid-1' )
+			->andReturn(
+				[
+					'error'   => 'not_found',
+					'message' => 'Network not found.',
+				],
+			);
+
+		$commands = $this->create_commands( $client );
+
+		$this->expect_cli_error( 'not_found: Network not found.' );
+
+		$commands->network( [ 'net-uuid-1' ], [] );
+	}
+
+	/**
+	 * Assert networks format_items receives correct arguments.
+	 *
+	 * @param string             $format  Output format.
+	 * @param array<int, mixed>  $items   Formatted items.
+	 * @param array<int, string> $columns Column list.
+	 *
+	 * @return void
+	 */
+	private function assert_networks_format(
+		string $format,
+		array $items,
+		array $columns,
+	): void {
+		$this->assertSame( 'table', $format );
+		$this->assertCount( 1, $items );
+		$this->assertSame( 'net-uuid-1', $items[0]['id'] );
+		$this->assertContains( 'id', $columns );
+		$this->assertContains( 'main_site_url', $columns );
+		$this->assertContains( 'label', $columns );
+		$this->assertContains( 'subsite_count', $columns );
+		$this->assertContains( 'last_seen', $columns );
+	}
+
+	/**
+	 * Create a network fixture for list tests.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function create_network_fixture(): array {
+		return [
+			'id'            => 'net-uuid-1',
+			'main_site_url' => 'https://network.example.tld',
+			'label'         => 'My Network',
+			'subsite_count' => 5,
+			'last_seen'     => '2026-04-01T12:00:00+00:00',
+		];
+	}
+
+	/**
+	 * Create a network detail fixture.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function create_network_detail_fixture(): array {
+		// phpcs:ignore Apermo.DataStructures.ArrayComplexity.TooManyKeysError -- API response fixture.
+		return [
+			'id'               => 'net-uuid-1',
+			'main_site_url'    => 'https://network.example.tld',
+			'label'            => 'My Network',
+			'subsite_count'    => 2,
+			'last_seen'        => '2026-04-01T12:00:00+00:00',
+			'network_plugins'  => [
+				[
+					'slug'             => 'akismet',
+					'name'             => 'Akismet',
+					'version'          => '5.3',
+					'update_available' => '',
+				],
+			],
+			'super_admins'     => [
+				[
+					'user_login'   => 'admin',
+					'display_name' => 'Administrator',
+					'email'        => 'admin@example.tld',
+				],
+			],
+			'network_settings' => [
+				[
+					'key'   => 'registration',
+					'label' => 'Registration',
+					'value' => 'none',
+				],
+			],
+			'subsites'         => [
+				[
+					'id'       => 'site-uuid-1',
+					'site_url' => 'https://sub.example.tld',
+					'label'    => 'Subsite One',
+				],
+			],
+		];
+	}
+
+	/**
 	 * Set up expectation for WP_CLI::error() to be called.
 	 *
 	 * @param string $message Expected error message.
