@@ -331,8 +331,9 @@ class ThemeReport extends ApiListTable {
 			foreach ( $theme['sites'] ?? [] as $site ) {
 				$url = $site['site_url'] ?? '';
 				if ( $url !== '' ) {
-					$label = $site['label'] ?? $url;
-					$site_urls[ $url ] = $label;
+					$domain = (string) \preg_replace( '#^https?://#', '', $url );
+					$name = $site['label'] ?? $domain;
+					$site_urls[ $url ] = $name . ' (' . $domain . ')';
 				}
 			}
 		}
