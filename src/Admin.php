@@ -49,6 +49,24 @@ class Admin {
 
 		add_submenu_page(
 			'site_bookkeeper_dashboard',
+			'Networks',
+			'Networks',
+			'manage_options',
+			'site_bookkeeper_dashboard_networks',
+			[ self::class, 'render_networks_page' ],
+		);
+
+		add_submenu_page(
+			'site_bookkeeper_dashboard',
+			'Network Detail',
+			'',
+			'manage_options',
+			'site_bookkeeper_dashboard_network_detail',
+			[ self::class, 'render_network_detail_page' ],
+		);
+
+		add_submenu_page(
+			'site_bookkeeper_dashboard',
 			'Plugin Report',
 			'Plugins',
 			'manage_options',
@@ -147,6 +165,68 @@ class Admin {
 	}
 
 	/**
+	 * Render the networks overview page.
+	 *
+	 * @return void
+	 */
+	public static function render_networks_page(): void {
+		$client = ApiClient::from_settings();
+		$data   = $client->get_networks();
+
+		$table    = new NetworksListTable();
+		$networks = $data['networks'] ?? [];
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only sort params.
+		$orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( wp_unslash( $_GET['orderby'] ) ) : 'label';
+		$order   = isset( $_GET['order'] ) ? sanitize_text_field( wp_unslash( $_GET['order'] ) ) : 'asc';
+		// phpcs:enable
+
+		$networks = $table->sort_items( $networks, $orderby, $order );
+
+		echo '<div class="wrap">';
+		echo '<h1>' . esc_html__( 'Networks', 'site-bookkeeper-dashboard' ) . '</h1>';
+
+		if ( isset( $data['error'] ) ) {
+			self::render_error( $data );
+		} else {
+			self::render_networks_table( $table, $networks );
+		}
+
+		echo '</div>';
+	}
+
+	/**
+	 * Render the network detail page.
+	 *
+	 * @return void
+	 */
+	public static function render_network_detail_page(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only ID param.
+		$network_id = isset( $_GET['network_id'] ) ? sanitize_text_field( wp_unslash( $_GET['network_id'] ) ) : '';
+
+		if ( $network_id === '' ) {
+			echo '<div class="wrap"><p>';
+			echo esc_html__( 'No network specified.', 'site-bookkeeper-dashboard' );
+			echo '</p></div>';
+			return;
+		}
+
+		$client  = ApiClient::from_settings();
+		$network = $client->get_network( $network_id );
+
+		echo '<div class="wrap">';
+		echo '<h1>' . esc_html( (string) ( $network['label'] ?? 'Network Detail' ) ) . '</h1>';
+
+		if ( isset( $network['error'] ) ) {
+			self::render_error( $network );
+		} else {
+			NetworkDetail::render( $network );
+		}
+
+		echo '</div>';
+	}
+
+	/**
 	 * Render the cross-site plugin report page.
 	 *
 	 * @return void
@@ -228,7 +308,7 @@ class Admin {
 	 * @return void
 	 */
 	private static function render_sites_table( SitesListTable $table, array $sites ): void {
-		$columns = $table->get_columns();
+		$columns = $table->get_columns( $sites );
 
 		echo '<table class="wp-list-table widefat fixed striped">';
 		echo '<thead><tr>';
@@ -262,6 +342,69 @@ class Admin {
 	}
 
 	/**
+	 * Render the networks list table.
+	 *
+	 * @param NetworksListTable                $table    List table instance.
+	 * @param array<int, array<string, mixed>> $networks Network data rows.
+	 *
+	 * @return void
+	 */
+	private static function render_networks_table( NetworksListTable $table, array $networks ): void {
+		$columns = $table->get_columns();
+
+		echo '<table class="wp-list-table widefat fixed striped">';
+		echo '<thead><tr>';
+		foreach ( $columns as $key => $label ) {
+			echo '<th scope="col" class="column-' . esc_attr( $key ) . '">';
+			echo esc_html( $label );
+			echo '</th>';
+		}
+		echo '</tr></thead>';
+
+		echo '<tbody>';
+		if ( $networks === [] ) {
+			echo '<tr><td colspan="' . \count( $columns ) . '">';
+			esc_html_e( 'No networks found.', 'site-bookkeeper-dashboard' );
+			echo '</td></tr>';
+		}
+
+		foreach ( $networks as $item ) {
+			$row_class = $table->get_row_class( $item );
+			echo '<tr class="' . esc_attr( $row_class ) . '">';
+			foreach ( \array_keys( $columns ) as $column_name ) {
+				echo '<td class="column-' . esc_attr( $column_name ) . '">';
+				// Column renderers handle their own escaping.
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo self::render_network_column( $table, $item, $column_name );
+				echo '</td>';
+			}
+			echo '</tr>';
+		}
+		echo '</tbody></table>';
+	}
+
+	/**
+	 * Render a single network column cell.
+	 *
+	 * @param NetworksListTable    $table       List table instance.
+	 * @param array<string, mixed> $item        Network data row.
+	 * @param string               $column_name Column key.
+	 *
+	 * @return string
+	 */
+	private static function render_network_column(
+		NetworksListTable $table,
+		array $item,
+		string $column_name,
+	): string {
+		return match ( $column_name ) {
+			'label'  => $table->column_label( $item ),
+			'status' => $table->column_status( $item ),
+			default  => $table->column_default( $item, $column_name ),
+		};
+	}
+
+	/**
 	 * Render a single column cell.
 	 *
 	 * @param SitesListTable       $table       List table instance.
@@ -279,6 +422,7 @@ class Admin {
 			'label'           => $table->column_label( $item ),
 			'wp_version'      => $table->column_wp_version( $item ),
 			'pending_updates' => $table->column_pending_updates( $item ),
+			'network'         => $table->column_network( $item ),
 			default           => $table->column_default( $item, $column_name ),
 		};
 	}

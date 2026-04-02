@@ -190,4 +190,89 @@ class SitesListTableTest extends TestCase {
 		$this->assertStringContainsString( '6.8', $output );
 		$this->assertStringContainsString( '6.8.1', $output );
 	}
+
+	/**
+	 * Verify get_columns includes network when sites have network_id.
+	 *
+	 * @return void
+	 */
+	public function test_get_columns_includes_network_when_present(): void {
+		$table = new SitesListTable();
+		$sites = [
+			[
+				'label' => 'Site A',
+				'network_id' => 'net-uuid-1',
+			],
+			[
+				'label' => 'Site B',
+				'network_id' => null,
+			],
+		];
+
+		$columns = $table->get_columns( $sites );
+
+		$this->assertArrayHasKey( 'network', $columns );
+	}
+
+	/**
+	 * Verify get_columns omits network when no sites have network_id.
+	 *
+	 * @return void
+	 */
+	public function test_get_columns_omits_network_when_absent(): void {
+		$table = new SitesListTable();
+		$sites = [
+			[ 'label' => 'Site A' ],
+			[
+				'label' => 'Site B',
+				'network_id' => null,
+			],
+		];
+
+		$columns = $table->get_columns( $sites );
+
+		$this->assertArrayNotHasKey( 'network', $columns );
+	}
+
+	/**
+	 * Verify column_network renders network label with link.
+	 *
+	 * @return void
+	 */
+	public function test_column_network_renders_label(): void {
+		Functions\stubs(
+			[
+				'esc_html' => static fn( string $text ): string => $text,
+				'esc_url' => static fn( string $url ): string => $url,
+				'admin_url' => static fn( string $path ): string => '/wp-admin/' . $path,
+			],
+		);
+
+		$table = new SitesListTable();
+		$item = [
+			'network_id'    => 'net-uuid-1',
+			'network_label' => 'My Network',
+		];
+
+		$output = $table->column_network( $item );
+
+		$this->assertStringContainsString( 'My Network', $output );
+		$this->assertStringContainsString( 'net-uuid-1', $output );
+	}
+
+	/**
+	 * Verify column_network returns dash when no network.
+	 *
+	 * @return void
+	 */
+	public function test_column_network_returns_dash_when_empty(): void {
+		$table = new SitesListTable();
+		$item = [
+			'network_id' => null,
+		];
+
+		$output = $table->column_network( $item );
+
+		$this->assertSame( '&mdash;', $output );
+	}
 }

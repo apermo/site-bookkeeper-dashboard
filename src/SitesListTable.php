@@ -15,10 +15,15 @@ class SitesListTable {
 	/**
 	 * Column definitions for the list table.
 	 *
+	 * Includes a "Network" column when any site has a
+	 * non-null network_id.
+	 *
+	 * @param array<int, array<string, mixed>> $sites Site data rows.
+	 *
 	 * @return array<string, string>
 	 */
-	public function get_columns(): array {
-		return [
+	public function get_columns( array $sites = [] ): array {
+		$columns = [
 			'label'           => 'Site',
 			'wp_version'      => 'WordPress',
 			'php_version'     => 'PHP',
@@ -26,6 +31,14 @@ class SitesListTable {
 			'last_seen'       => 'Last Seen',
 			'last_updated'    => 'Last Updated',
 		];
+
+		if ( $this->has_network_sites( $sites ) ) {
+			$columns = \array_slice( $columns, 0, 1, true )
+				+ [ 'network' => 'Network' ]
+				+ \array_slice( $columns, 1, null, true );
+		}
+
+		return $columns;
 	}
 
 	/**
@@ -115,6 +128,34 @@ class SitesListTable {
 	}
 
 	/**
+	 * Render the network column with a link to network detail.
+	 *
+	 * @param array<string, mixed> $item Site data row.
+	 *
+	 * @return string
+	 */
+	public function column_network( array $item ): string {
+		$network_id = $item['network_id'] ?? null;
+
+		if ( $network_id === null || $network_id === '' ) {
+			return '&mdash;';
+		}
+
+		$detail_url = admin_url(
+			\sprintf(
+				'admin.php?page=site_bookkeeper_dashboard_network_detail&network_id=%s',
+				$network_id,
+			),
+		);
+
+		return \sprintf(
+			'<a href="%s">%s</a>',
+			esc_url( $detail_url ),
+			esc_html( (string) ( $item['network_label'] ?? (string) $network_id ) ),
+		);
+	}
+
+	/**
 	 * Render a default column value.
 	 *
 	 * @param array<string, mixed> $item        Site data row.
@@ -166,5 +207,23 @@ class SitesListTable {
 		);
 
 		return $items;
+	}
+
+	/**
+	 * Check whether any site has a non-null network_id.
+	 *
+	 * @param array<int, array<string, mixed>> $sites Site data rows.
+	 *
+	 * @return bool
+	 */
+	private function has_network_sites( array $sites ): bool {
+		foreach ( $sites as $site ) {
+			$network_id = $site['network_id'] ?? null;
+			if ( $network_id !== null && $network_id !== '' ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

@@ -71,7 +71,33 @@ class AdminTest extends TestCase {
 			);
 
 		Functions\expect( 'add_submenu_page' )
-			->times( 3 );
+			->times( 5 );
+
+		Admin::register_pages();
+	}
+
+	/**
+	 * Verify register_pages includes networks submenu.
+	 *
+	 * @return void
+	 */
+	public function test_register_pages_includes_networks(): void {
+		Functions\expect( 'add_menu_page' )->once();
+
+		Functions\expect( 'add_submenu_page' )
+			->once()
+			->with(
+				'site_bookkeeper_dashboard',
+				'Networks',
+				'Networks',
+				'manage_options',
+				'site_bookkeeper_dashboard_networks',
+				[ Admin::class, 'render_networks_page' ],
+			);
+
+		// Allow remaining submenu page registrations.
+		Functions\expect( 'add_submenu_page' )
+			->zeroOrMoreTimes();
 
 		Admin::register_pages();
 	}
