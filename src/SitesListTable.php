@@ -417,12 +417,17 @@ class SitesListTable extends ApiListTable {
 			return;
 		}
 
-		$this->render_last_checked();
 		$this->render_vuln_status();
-		echo '<form method="get">';
-		echo '<input type="hidden" name="page" value="site_bookkeeper_dashboard" />';
 		parent::display();
-		echo '</form>';
+	}
+
+	/**
+	 * Return form page slug for filter wrapping.
+	 *
+	 * @return string
+	 */
+	protected function get_form_page(): string {
+		return 'site_bookkeeper_dashboard';
 	}
 
 	/**

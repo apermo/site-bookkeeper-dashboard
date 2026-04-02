@@ -136,7 +136,41 @@ abstract class ApiListTable extends WP_List_Table {
 		}
 
 		$this->render_last_checked();
+
+		$form_page = $this->get_form_page();
+		if ( $form_page !== '' ) {
+			echo '<form method="get">';
+			\printf( '<input type="hidden" name="page" value="%s" />', esc_attr( $form_page ) );
+			$this->render_hidden_filters();
+		}
+
 		parent::display();
+
+		if ( $form_page !== '' ) {
+			echo '</form>';
+		}
+	}
+
+	/**
+	 * Return the admin page slug to wrap the table in a filter form.
+	 *
+	 * Override in subclasses that need filter forms. Return empty
+	 * string to skip the form wrapper.
+	 *
+	 * @return string
+	 */
+	protected function get_form_page(): string {
+		return '';
+	}
+
+	/**
+	 * Render hidden form fields to preserve filter state.
+	 *
+	 * Override in subclasses that need to preserve extra params.
+	 *
+	 * @return void
+	 */
+	protected function render_hidden_filters(): void {
 	}
 
 	/**

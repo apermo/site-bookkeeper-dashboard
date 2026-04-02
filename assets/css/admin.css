@@ -92,6 +92,11 @@
 	font-style: italic;
 }
 
+/* Activation status labels */
+.smd-activation-label {
+	color: #a7aaad;
+}
+
 /* Detail page sections */
 .smd-detail-section {
 	margin-bottom: 20px;
