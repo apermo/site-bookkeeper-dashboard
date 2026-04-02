@@ -8,21 +8,56 @@ namespace Apermo\SiteBookkeeperDashboard;
  * Sites overview list table.
  *
  * Renders the main admin page table showing all monitored
- * sites with sortable columns and stale/update highlighting.
+ * sites with sortable columns, pagination, and stale highlighting.
  */
-class SitesListTable {
+class SitesListTable extends ApiListTable {
 
 	/**
-	 * Column definitions for the list table.
+	 * Whether any site in the dataset has a network_id.
 	 *
-	 * Includes a "Network" column when any site has a
-	 * non-null network_id.
+	 * @var bool
+	 */
+	private bool $has_networks = false;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		parent::__construct(
+			[
+				'singular' => 'site',
+				'plural'   => 'sites',
+				'ajax'     => false,
+			],
+		);
+	}
+
+	/**
+	 * Fetch site data from the hub API.
 	 *
-	 * @param array<int, array<string, mixed>> $sites Site data rows.
+	 * @return array<int, array<string, mixed>>
+	 */
+	protected function fetch_data(): array {
+		$client = ApiClient::from_settings();
+		$data = $client->get_sites();
+
+		if ( isset( $data['error'] ) ) {
+			$this->api_error = $data;
+			return [];
+		}
+
+		$sites = $data['sites'] ?? [];
+		$this->has_networks = $this->detect_networks( $sites );
+
+		return $sites;
+	}
+
+	/**
+	 * Column definitions.
 	 *
 	 * @return array<string, string>
 	 */
-	public function get_columns( array $sites = [] ): array {
+	public function get_columns(): array {
 		$columns = [
 			'label'            => 'Site',
 			'environment_type' => 'Environment',
@@ -33,7 +68,7 @@ class SitesListTable {
 			'last_updated'     => 'Last Updated',
 		];
 
-		if ( $this->has_network_sites( $sites ) ) {
+		if ( $this->has_networks ) {
 			$columns = \array_slice( $columns, 0, 1, true )
 				+ [ 'network' => 'Network' ]
 				+ \array_slice( $columns, 1, null, true );
@@ -83,16 +118,13 @@ class SitesListTable {
 	/**
 	 * Render the WordPress version column.
 	 *
-	 * Shows the current version and highlights when an
-	 * update is available.
-	 *
 	 * @param array<string, mixed> $item Site data row.
 	 *
 	 * @return string
 	 */
 	public function column_wp_version( array $item ): string {
 		$version = (string) ( $item['wp_version'] ?? '' );
-		$update  = (string) ( $item['wp_update_available'] ?? '' );
+		$update = (string) ( $item['wp_update_available'] ?? '' );
 
 		if ( $update === '' ) {
 			return \sprintf(
@@ -101,10 +133,8 @@ class SitesListTable {
 			);
 		}
 
-		// Same major.minor (e.g. 6.7.1 → 6.7.2) = patch behind.
-		// Different major.minor (e.g. 6.6.2 → 6.7.2) = old major, acceptable.
 		$current_major = \implode( '.', \array_slice( \explode( '.', $version ), 0, 2 ) );
-		$update_major  = \implode( '.', \array_slice( \explode( '.', $update ), 0, 2 ) );
+		$update_major = \implode( '.', \array_slice( \explode( '.', $update ), 0, 2 ) );
 
 		if ( $current_major !== $update_major ) {
 			return \sprintf(
@@ -124,16 +154,14 @@ class SitesListTable {
 	/**
 	 * Render the pending updates column.
 	 *
-	 * Highlights the count when updates are available.
-	 *
 	 * @param array<string, mixed> $item Site data row.
 	 *
 	 * @return string
 	 */
 	public function column_pending_updates( array $item ): string {
 		$plugin_updates = (int) ( $item['pending_plugin_updates'] ?? 0 );
-		$theme_updates  = (int) ( $item['pending_theme_updates'] ?? 0 );
-		$total          = $plugin_updates + $theme_updates;
+		$theme_updates = (int) ( $item['pending_theme_updates'] ?? 0 );
+		$total = $plugin_updates + $theme_updates;
 
 		if ( $total > 0 ) {
 			return \sprintf(
@@ -146,7 +174,7 @@ class SitesListTable {
 	}
 
 	/**
-	 * Render the network column with a link to network detail.
+	 * Render the network column.
 	 *
 	 * @param array<string, mixed> $item Site data row.
 	 *
@@ -174,15 +202,111 @@ class SitesListTable {
 	}
 
 	/**
-	 * Render a date/time column with localized formatting.
+	 * Render a date/time column.
 	 *
-	 * @param array<string, mixed> $item        Site data row.
-	 * @param string               $column_name Column key.
+	 * @param array<string, mixed> $item Site data row.
 	 *
 	 * @return string
 	 */
-	public function column_datetime( array $item, string $column_name ): string {
-		$raw = (string) ( $item[ $column_name ] ?? '' );
+	public function column_last_seen( array $item ): string {
+		return $this->format_datetime( (string) ( $item['last_seen'] ?? '' ) );
+	}
+
+	/**
+	 * Render last_updated column.
+	 *
+	 * @param array<string, mixed> $item Site data row.
+	 *
+	 * @return string
+	 */
+	public function column_last_updated( array $item ): string {
+		return $this->format_datetime( (string) ( $item['last_updated'] ?? '' ) );
+	}
+
+	/**
+	 * Return CSS class for stale sites.
+	 *
+	 * @param array<string, mixed> $item Site data row.
+	 *
+	 * @return string
+	 */
+	protected function get_row_class( array $item ): string {
+		if ( isset( $item['stale'] ) && $item['stale'] === true ) {
+			return 'smd-stale';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Display the table with vulnerability status.
+	 *
+	 * @return void
+	 */
+	public function display(): void {
+		if ( $this->api_error !== null ) {
+			\printf(
+				'<div class="notice notice-error"><p>%s: %s</p></div>',
+				esc_html( (string) ( $this->api_error['error'] ?? 'error' ) ),
+				esc_html( (string) ( $this->api_error['message'] ?? 'Unknown error.' ) ),
+			);
+			return;
+		}
+
+		$this->render_last_checked();
+		$this->render_vuln_status();
+		parent::display();
+	}
+
+	/**
+	 * Render vulnerability provider status.
+	 *
+	 * @return void
+	 */
+	private function render_vuln_status(): void {
+		$client = ApiClient::from_settings();
+		$status = $client->get_vulnerability_status();
+
+		if ( isset( $status['error'] ) || ( $status['enabled'] ?? false ) !== true ) {
+			echo '<p class="smd-vuln-status">';
+			esc_html_e( 'Vulnerability scanning: not configured.', 'site-bookkeeper-dashboard' );
+			echo '</p>';
+			return;
+		}
+
+		$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+		$parts = [];
+
+		foreach ( $status['providers'] ?? [] as $provider ) {
+			$name = esc_html( (string) ( $provider['name'] ?? '' ) );
+			$last = $provider['last_sync'] ?? null;
+
+			if ( $last !== null ) {
+				$date = wp_date( $format, \strtotime( $last ) );
+				$parts[] = \sprintf( '<strong>%s</strong> (last sync: %s)', $name, esc_html( (string) $date ) );
+			} else {
+				$parts[] = \sprintf( '<strong>%s</strong> (never synced)', $name );
+			}
+		}
+
+		echo '<p class="smd-vuln-status">';
+		\printf(
+			'%s %s',
+			esc_html__( 'Vulnerability providers:', 'site-bookkeeper-dashboard' ),
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each part is escaped above.
+			\implode( ', ', $parts ),
+		);
+		echo '</p>';
+	}
+
+	/**
+	 * Format an ISO date string to the site's configured format.
+	 *
+	 * @param string $raw ISO 8601 date string.
+	 *
+	 * @return string
+	 */
+	private function format_datetime( string $raw ): string {
 		if ( $raw === '' ) {
 			return '&mdash;';
 		}
@@ -198,67 +322,13 @@ class SitesListTable {
 	}
 
 	/**
-	 * Render a default column value.
-	 *
-	 * @param array<string, mixed> $item        Site data row.
-	 * @param string               $column_name Column key.
-	 *
-	 * @return string
-	 */
-	public function column_default( array $item, string $column_name ): string {
-		return esc_html( (string) ( $item[ $column_name ] ?? '' ) );
-	}
-
-	/**
-	 * Get the CSS class for a table row.
-	 *
-	 * Returns 'smd-stale' for stale sites to allow visual
-	 * highlighting via admin CSS.
-	 *
-	 * @param array<string, mixed> $item Site data row.
-	 *
-	 * @return string
-	 */
-	public function get_row_class( array $item ): string {
-		if ( isset( $item['stale'] ) && $item['stale'] === true ) {
-			return 'smd-stale';
-		}
-
-		return '';
-	}
-
-	/**
-	 * Sort items by the requested column.
-	 *
-	 * @param array<int, array<string, mixed>> $items   Site data rows.
-	 * @param string                           $orderby Column to sort by.
-	 * @param string                           $order   Sort direction (asc|desc).
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	public function sort_items( array $items, string $orderby = 'label', string $order = 'asc' ): array {
-		\usort(
-			$items,
-			static function ( array $left, array $right ) use ( $orderby, $order ): int {
-				$val_a  = (string) ( $left[ $orderby ] ?? '' );
-				$val_b  = (string) ( $right[ $orderby ] ?? '' );
-				$result = \strnatcasecmp( $val_a, $val_b );
-
-				return $order === 'desc' ? -$result : $result;
-			},
-		);
-
-		return $items;
-	}
-
-	/**
-	 * Check whether any site has a non-null network_id.
+	 * Check whether any site has a network_id.
 	 *
 	 * @param array<int, array<string, mixed>> $sites Site data rows.
 	 *
 	 * @return bool
 	 */
-	private function has_network_sites( array $sites ): bool {
+	private function detect_networks( array $sites ): bool {
 		foreach ( $sites as $site ) {
 			$network_id = $site['network_id'] ?? null;
 			if ( $network_id !== null && $network_id !== '' ) {

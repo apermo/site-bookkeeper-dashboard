@@ -77,9 +77,7 @@ class Admin {
 	}
 
 	/**
-	 * Handle the cache flush action.
-	 *
-	 * Clears all API transients and redirects back to the referring page.
+	 * Handle the API cache flush action.
 	 *
 	 * @return void
 	 */
@@ -124,115 +122,17 @@ class Admin {
 	}
 
 	/**
-	 * Render the "last checked / check again" line.
-	 *
-	 * @return void
-	 */
-	private static function render_last_checked(): void {
-		$flush_url = wp_nonce_url(
-			add_query_arg( 'sbd_flush', '1' ),
-			'sbd_flush_cache',
-		);
-
-		$last_checked = ApiClient::get_last_checked();
-		$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
-
-		if ( $last_checked !== null ) {
-			$date_string = wp_date( $format, $last_checked );
-			\printf(
-				'<p class="smd-last-checked">%s <a href="%s">%s</a></p>',
-				esc_html(
-					\sprintf(
-						/* translators: %s: formatted date/time */
-						__( 'Last checked on %s.', 'site-bookkeeper-dashboard' ),
-						$date_string,
-					),
-				),
-				esc_url( $flush_url ),
-				esc_html__( 'Check again.', 'site-bookkeeper-dashboard' ),
-			);
-		} else {
-			\printf(
-				'<p class="smd-last-checked"><a href="%s">%s</a></p>',
-				esc_url( $flush_url ),
-				esc_html__( 'Check now.', 'site-bookkeeper-dashboard' ),
-			);
-		}
-	}
-
-	/**
-	 * Render vulnerability provider status.
-	 *
-	 * @param ApiClient $client API client instance.
-	 *
-	 * @return void
-	 */
-	private static function render_vuln_status( ApiClient $client ): void {
-		$status = $client->get_vulnerability_status();
-
-		if ( isset( $status['error'] ) || ( $status['enabled'] ?? false ) !== true ) {
-			echo '<p class="smd-vuln-status">';
-			esc_html_e( 'Vulnerability scanning: not configured.', 'site-bookkeeper-dashboard' );
-			echo '</p>';
-			return;
-		}
-
-		$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
-		$parts = [];
-
-		foreach ( $status['providers'] ?? [] as $provider ) {
-			$name = esc_html( (string) ( $provider['name'] ?? '' ) );
-			$last = $provider['last_sync'] ?? null;
-
-			if ( $last !== null ) {
-				$date = wp_date( $format, \strtotime( $last ) );
-				$parts[] = \sprintf( '<strong>%s</strong> (last sync: %s)', $name, esc_html( (string) $date ) );
-			} else {
-				$parts[] = \sprintf( '<strong>%s</strong> (never synced)', $name );
-			}
-		}
-
-		echo '<p class="smd-vuln-status">';
-		\printf(
-			'%s %s',
-			esc_html__( 'Vulnerability providers:', 'site-bookkeeper-dashboard' ),
-			// Each part is built with esc_html() internally.
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			\implode( ', ', $parts ),
-		);
-		echo '</p>';
-	}
-
-	/**
 	 * Render the sites overview page.
 	 *
 	 * @return void
 	 */
 	public static function render_sites_page(): void {
-		$client = ApiClient::from_settings();
-		$data   = $client->get_sites();
-
 		$table = new SitesListTable();
-		$sites = $data['sites'] ?? [];
-
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only sort params.
-		$orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( wp_unslash( $_GET['orderby'] ) ) : 'label';
-		$order   = isset( $_GET['order'] ) ? sanitize_text_field( wp_unslash( $_GET['order'] ) ) : 'asc';
-		// phpcs:enable
-
-		$sites = $table->sort_items( $sites, $orderby, $order );
+		$table->prepare_items();
 
 		echo '<div class="wrap">';
 		echo '<h1>' . esc_html__( 'Site Bookkeeper Dashboard', 'site-bookkeeper-dashboard' ) . '</h1>';
-
-		if ( isset( $data['error'] ) ) {
-			self::render_error( $data );
-		} else {
-			self::render_last_checked();
-			self::render_vuln_status( $client );
-			self::render_sites_table( $table, $sites );
-		}
-
+		$table->display();
 		echo '</div>';
 	}
 
@@ -271,28 +171,73 @@ class Admin {
 	 * @return void
 	 */
 	public static function render_networks_page(): void {
-		$client = ApiClient::from_settings();
-		$data   = $client->get_networks();
-
-		$table    = new NetworksListTable();
-		$networks = $data['networks'] ?? [];
-
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only sort params.
-		$orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( wp_unslash( $_GET['orderby'] ) ) : 'label';
-		$order   = isset( $_GET['order'] ) ? sanitize_text_field( wp_unslash( $_GET['order'] ) ) : 'asc';
-		// phpcs:enable
-
-		$networks = $table->sort_items( $networks, $orderby, $order );
+		$table = new NetworksListTable();
+		$table->prepare_items();
 
 		echo '<div class="wrap">';
 		echo '<h1>' . esc_html__( 'Networks', 'site-bookkeeper-dashboard' ) . '</h1>';
+		$table->display();
+		echo '</div>';
+	}
 
-		if ( isset( $data['error'] ) ) {
-			self::render_error( $data );
-		} else {
-			self::render_networks_table( $table, $networks );
+	/**
+	 * Render the network detail page.
+	 *
+	 * @return void
+	 */
+	public static function render_network_detail_page(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only ID param.
+		$network_id = isset( $_GET['network_id'] ) ? sanitize_text_field( wp_unslash( $_GET['network_id'] ) ) : '';
+
+		if ( $network_id === '' ) {
+			echo '<div class="wrap"><p>';
+			echo esc_html__( 'No network specified.', 'site-bookkeeper-dashboard' );
+			echo '</p></div>';
+			return;
 		}
 
+		$client  = ApiClient::from_settings();
+		$network = $client->get_network( $network_id );
+
+		echo '<div class="wrap">';
+		echo '<h1>' . esc_html( (string) ( $network['label'] ?? 'Network Detail' ) ) . '</h1>';
+
+		if ( isset( $network['error'] ) ) {
+			self::render_error( $network );
+		} else {
+			NetworkDetail::render( $network );
+		}
+
+		echo '</div>';
+	}
+
+	/**
+	 * Render the cross-site plugin report page.
+	 *
+	 * @return void
+	 */
+	public static function render_plugin_report(): void {
+		$table = new PluginReport();
+		$table->prepare_items();
+
+		echo '<div class="wrap">';
+		echo '<h1>' . esc_html__( 'Cross-Site Plugin Report', 'site-bookkeeper-dashboard' ) . '</h1>';
+		$table->display();
+		echo '</div>';
+	}
+
+	/**
+	 * Render the cross-site theme report page.
+	 *
+	 * @return void
+	 */
+	public static function render_theme_report(): void {
+		$table = new ThemeReport();
+		$table->prepare_items();
+
+		echo '<div class="wrap">';
+		echo '<h1>' . esc_html__( 'Cross-Site Theme Report', 'site-bookkeeper-dashboard' ) . '</h1>';
+		$table->display();
 		echo '</div>';
 	}
 
@@ -333,6 +278,21 @@ class Admin {
 	}
 
 	/**
+	 * Render an API error notice.
+	 *
+	 * @param array<string, mixed> $data Error response data.
+	 *
+	 * @return void
+	 */
+	private static function render_error( array $data ): void {
+		\printf(
+			'<div class="notice notice-error"><p>%s: %s</p></div>',
+			esc_html( (string) ( $data['error'] ?? 'error' ) ),
+			esc_html( (string) ( $data['message'] ?? 'Unknown error.' ) ),
+		);
+	}
+
+	/**
 	 * Render user search results table.
 	 *
 	 * @param array<int, array<string, mixed>> $users Grouped user results.
@@ -345,6 +305,7 @@ class Admin {
 			return;
 		}
 
+		// phpcs:ignore Apermo.DataStructures.ArrayComplexity.TooManyKeysError -- HTML table structure.
 		echo '<table class="wp-list-table widefat fixed striped">';
 		echo '<thead><tr>';
 		echo '<th>' . esc_html__( 'Login', 'site-bookkeeper-dashboard' ) . '</th>';
@@ -401,334 +362,5 @@ class Admin {
 			echo '</li>';
 		}
 		echo '</ul>';
-	}
-
-	/**
-	 * Render the network detail page.
-	 *
-	 * @return void
-	 */
-	public static function render_network_detail_page(): void {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only ID param.
-		$network_id = isset( $_GET['network_id'] ) ? sanitize_text_field( wp_unslash( $_GET['network_id'] ) ) : '';
-
-		if ( $network_id === '' ) {
-			echo '<div class="wrap"><p>';
-			echo esc_html__( 'No network specified.', 'site-bookkeeper-dashboard' );
-			echo '</p></div>';
-			return;
-		}
-
-		$client  = ApiClient::from_settings();
-		$network = $client->get_network( $network_id );
-
-		echo '<div class="wrap">';
-		echo '<h1>' . esc_html( (string) ( $network['label'] ?? 'Network Detail' ) ) . '</h1>';
-
-		if ( isset( $network['error'] ) ) {
-			self::render_error( $network );
-		} else {
-			NetworkDetail::render( $network );
-		}
-
-		echo '</div>';
-	}
-
-	/**
-	 * Render the cross-site plugin report page.
-	 *
-	 * @return void
-	 */
-	public static function render_plugin_report(): void {
-		$client = ApiClient::from_settings();
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only filter param.
-		$outdated = isset( $_GET['outdated'] ) && $_GET['outdated'] === '1';
-		$params = $outdated ? [ 'outdated' => 'true' ] : [];
-
-		$data = $client->get_plugins( $params );
-		$report = new PluginReport();
-		$plugins = $data['plugins'] ?? [];
-
-		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Cross-Site Plugin Report', 'site-bookkeeper-dashboard' ) . '</h1>';
-
-		if ( isset( $data['error'] ) ) {
-			self::render_error( $data );
-		} else {
-			self::render_last_checked();
-			self::render_report_filter( 'site_bookkeeper_dashboard_plugins', $outdated );
-			self::render_report_table( $report, $plugins );
-		}
-
-		echo '</div>';
-	}
-
-	/**
-	 * Render the cross-site theme report page.
-	 *
-	 * @return void
-	 */
-	public static function render_theme_report(): void {
-		$client = ApiClient::from_settings();
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only filter param.
-		$outdated = isset( $_GET['outdated'] ) && $_GET['outdated'] === '1';
-		$params = $outdated ? [ 'outdated' => 'true' ] : [];
-
-		$data = $client->get_themes( $params );
-		$report = new ThemeReport();
-		$themes = $data['themes'] ?? [];
-
-		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Cross-Site Theme Report', 'site-bookkeeper-dashboard' ) . '</h1>';
-
-		if ( isset( $data['error'] ) ) {
-			self::render_error( $data );
-		} else {
-			self::render_last_checked();
-			self::render_report_filter( 'site_bookkeeper_dashboard_themes', $outdated );
-			self::render_report_table( $report, $themes );
-		}
-
-		echo '</div>';
-	}
-
-	/**
-	 * Render an API error notice.
-	 *
-	 * @param array<string, mixed> $data Error response data.
-	 *
-	 * @return void
-	 */
-	private static function render_error( array $data ): void {
-		\printf(
-			'<div class="notice notice-error"><p>%s: %s</p></div>',
-			esc_html( (string) ( $data['error'] ?? 'error' ) ),
-			esc_html( (string) ( $data['message'] ?? 'Unknown error.' ) ),
-		);
-	}
-
-	/**
-	 * Render the sites list table.
-	 *
-	 * @param SitesListTable                   $table List table instance.
-	 * @param array<int, array<string, mixed>> $sites Site data rows.
-	 *
-	 * @return void
-	 */
-	private static function render_sites_table( SitesListTable $table, array $sites ): void {
-		$columns = $table->get_columns( $sites );
-
-		echo '<table class="wp-list-table widefat fixed striped">';
-		echo '<thead><tr>';
-		foreach ( $columns as $key => $label ) {
-			echo '<th scope="col" class="column-' . esc_attr( $key ) . '">';
-			echo esc_html( $label );
-			echo '</th>';
-		}
-		echo '</tr></thead>';
-
-		echo '<tbody>';
-		if ( $sites === [] ) {
-			echo '<tr><td colspan="' . \count( $columns ) . '">';
-			esc_html_e( 'No sites found.', 'site-bookkeeper-dashboard' );
-			echo '</td></tr>';
-		}
-
-		foreach ( $sites as $item ) {
-			$row_class = $table->get_row_class( $item );
-			echo '<tr class="' . esc_attr( $row_class ) . '">';
-			foreach ( \array_keys( $columns ) as $column_name ) {
-				echo '<td class="column-' . esc_attr( $column_name ) . '">';
-				// Column renderers handle their own escaping.
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo self::render_column( $table, $item, $column_name );
-				echo '</td>';
-			}
-			echo '</tr>';
-		}
-		echo '</tbody></table>';
-	}
-
-	/**
-	 * Render the networks list table.
-	 *
-	 * @param NetworksListTable                $table    List table instance.
-	 * @param array<int, array<string, mixed>> $networks Network data rows.
-	 *
-	 * @return void
-	 */
-	private static function render_networks_table( NetworksListTable $table, array $networks ): void {
-		$columns = $table->get_columns();
-
-		echo '<table class="wp-list-table widefat fixed striped">';
-		echo '<thead><tr>';
-		foreach ( $columns as $key => $label ) {
-			echo '<th scope="col" class="column-' . esc_attr( $key ) . '">';
-			echo esc_html( $label );
-			echo '</th>';
-		}
-		echo '</tr></thead>';
-
-		echo '<tbody>';
-		if ( $networks === [] ) {
-			echo '<tr><td colspan="' . \count( $columns ) . '">';
-			esc_html_e( 'No networks found.', 'site-bookkeeper-dashboard' );
-			echo '</td></tr>';
-		}
-
-		foreach ( $networks as $item ) {
-			$row_class = $table->get_row_class( $item );
-			echo '<tr class="' . esc_attr( $row_class ) . '">';
-			foreach ( \array_keys( $columns ) as $column_name ) {
-				echo '<td class="column-' . esc_attr( $column_name ) . '">';
-				// Column renderers handle their own escaping.
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo self::render_network_column( $table, $item, $column_name );
-				echo '</td>';
-			}
-			echo '</tr>';
-		}
-		echo '</tbody></table>';
-	}
-
-	/**
-	 * Render a single network column cell.
-	 *
-	 * @param NetworksListTable    $table       List table instance.
-	 * @param array<string, mixed> $item        Network data row.
-	 * @param string               $column_name Column key.
-	 *
-	 * @return string
-	 */
-	private static function render_network_column(
-		NetworksListTable $table,
-		array $item,
-		string $column_name,
-	): string {
-		return match ( $column_name ) {
-			'label'  => $table->column_label( $item ),
-			'status' => $table->column_status( $item ),
-			default  => $table->column_default( $item, $column_name ),
-		};
-	}
-
-	/**
-	 * Render a single column cell.
-	 *
-	 * @param SitesListTable       $table       List table instance.
-	 * @param array<string, mixed> $item        Site data row.
-	 * @param string               $column_name Column key.
-	 *
-	 * @return string
-	 */
-	private static function render_column(
-		SitesListTable $table,
-		array $item,
-		string $column_name,
-	): string {
-		return match ( $column_name ) {
-			'label'           => $table->column_label( $item ),
-			'wp_version'      => $table->column_wp_version( $item ),
-			'pending_updates' => $table->column_pending_updates( $item ),
-			'network'         => $table->column_network( $item ),
-			'last_seen',
-			'last_updated'    => $table->column_datetime( $item, $column_name ),
-			default           => $table->column_default( $item, $column_name ),
-		};
-	}
-
-	/**
-	 * Render the outdated-only filter toggle.
-	 *
-	 * @param string $page_slug Admin page slug.
-	 * @param bool   $active    Whether the filter is active.
-	 *
-	 * @return void
-	 */
-	private static function render_report_filter( string $page_slug, bool $active ): void {
-		$url = admin_url( 'admin.php?page=' . $page_slug );
-
-		echo '<p>';
-		if ( $active ) {
-			\printf(
-				'<a href="%s">%s</a> | <strong>%s</strong>',
-				esc_url( $url ),
-				esc_html__( 'All', 'site-bookkeeper-dashboard' ),
-				esc_html__( 'Outdated only', 'site-bookkeeper-dashboard' ),
-			);
-		} else {
-			\printf(
-				'<strong>%s</strong> | <a href="%s">%s</a>',
-				esc_html__( 'All', 'site-bookkeeper-dashboard' ),
-				esc_url( $url . '&outdated=1' ),
-				esc_html__( 'Outdated only', 'site-bookkeeper-dashboard' ),
-			);
-		}
-		echo '</p>';
-	}
-
-	/**
-	 * Render a report table (plugins or themes).
-	 *
-	 * @param PluginReport|ThemeReport         $report Report instance.
-	 * @param array<int, array<string, mixed>> $items  Data rows.
-	 *
-	 * @return void
-	 */
-	private static function render_report_table( PluginReport|ThemeReport $report, array $items ): void {
-		$columns = $report->get_columns();
-
-		echo '<table class="wp-list-table widefat fixed striped">';
-		echo '<thead><tr>';
-		foreach ( $columns as $key => $label ) {
-			echo '<th scope="col" class="column-' . esc_attr( $key ) . '">';
-			echo esc_html( $label );
-			echo '</th>';
-		}
-		echo '</tr></thead>';
-
-		echo '<tbody>';
-		if ( $items === [] ) {
-			echo '<tr><td colspan="' . \count( $columns ) . '">';
-			esc_html_e( 'No items found.', 'site-bookkeeper-dashboard' );
-			echo '</td></tr>';
-		}
-
-		foreach ( $items as $item ) {
-			echo '<tr>';
-			foreach ( \array_keys( $columns ) as $column_name ) {
-				echo '<td class="column-' . esc_attr( $column_name ) . '">';
-				// Column renderers handle their own escaping.
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo self::render_report_column( $report, $item, $column_name );
-				echo '</td>';
-			}
-			echo '</tr>';
-		}
-		echo '</tbody></table>';
-	}
-
-	/**
-	 * Render a single report column cell.
-	 *
-	 * @param PluginReport|ThemeReport $report      Report instance.
-	 * @param array<string, mixed>     $item        Data row.
-	 * @param string                   $column_name Column key.
-	 *
-	 * @return string
-	 */
-	private static function render_report_column(
-		PluginReport|ThemeReport $report,
-		array $item,
-		string $column_name,
-	): string {
-		return match ( $column_name ) {
-			'name'     => $report->column_name( $item ),
-			'sites'    => $report->column_sites( $item ),
-			'versions' => $report->column_versions( $item ),
-			default    => $report->column_default( $item, $column_name ),
-		};
 	}
 }

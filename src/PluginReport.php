@@ -10,7 +10,42 @@ namespace Apermo\SiteBookkeeperDashboard;
  * Lists all known plugins across all monitored sites, showing
  * which sites have each plugin, versions, and update status.
  */
-class PluginReport {
+class PluginReport extends ApiListTable {
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		parent::__construct(
+			[
+				'singular' => 'plugin',
+				'plural'   => 'plugins',
+				'ajax'     => false,
+			],
+		);
+	}
+
+	/**
+	 * Fetch plugin data from the hub API.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	protected function fetch_data(): array {
+		$client = ApiClient::from_settings();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only filter param.
+		$outdated = isset( $_GET['outdated'] ) && $_GET['outdated'] === '1';
+		$params = $outdated ? [ 'outdated' => 'true' ] : [];
+
+		$data = $client->get_plugins( $params );
+
+		if ( isset( $data['error'] ) ) {
+			$this->api_error = $data;
+			return [];
+		}
+
+		return $data['plugins'] ?? [];
+	}
 
 	/**
 	 * Column definitions for the plugin report table.
@@ -19,9 +54,9 @@ class PluginReport {
 	 */
 	public function get_columns(): array {
 		return [
-			'name' => 'Plugin',
-			'slug' => 'Slug',
-			'sites' => 'Sites',
+			'name'     => 'Plugin',
+			'slug'     => 'Slug',
+			'sites'    => 'Sites',
 			'versions' => 'Versions',
 		];
 	}
@@ -94,7 +129,7 @@ class PluginReport {
 			}
 
 			$version = (string) $site['version'];
-			$domain  = (string) \preg_replace( '#^https?://#', '', $site['site_url'] ?? '' );
+			$domain = (string) \preg_replace( '#^https?://#', '', $site['site_url'] ?? '' );
 
 			$by_version[ $version ][] = $domain;
 
@@ -125,38 +160,37 @@ class PluginReport {
 	}
 
 	/**
-	 * Render a default column value.
+	 * Render filter navigation above the table.
 	 *
-	 * @param array<string, mixed> $item        Plugin data row.
-	 * @param string               $column_name Column key.
+	 * @param string $which Top or bottom position.
 	 *
-	 * @return string
+	 * @return void
 	 */
-	public function column_default( array $item, string $column_name ): string {
-		return esc_html( (string) ( $item[ $column_name ] ?? '' ) );
-	}
+	protected function extra_tablenav( $which ): void { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- WP_List_Table override.
+		if ( $which !== 'top' ) {
+			return;
+		}
 
-	/**
-	 * Sort items by the requested column.
-	 *
-	 * @param array<int, array<string, mixed>> $items   Plugin data rows.
-	 * @param string                           $orderby Column to sort by.
-	 * @param string                           $order   Sort direction.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	public function sort_items( array $items, string $orderby = 'name', string $order = 'asc' ): array {
-		\usort(
-			$items,
-			static function ( array $left, array $right ) use ( $orderby, $order ): int {
-				$val_a = (string) ( $left[ $orderby ] ?? '' );
-				$val_b = (string) ( $right[ $orderby ] ?? '' );
-				$result = \strnatcasecmp( $val_a, $val_b );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only filter param.
+		$outdated = isset( $_GET['outdated'] ) && $_GET['outdated'] === '1';
+		$page_url = admin_url( 'admin.php?page=site_bookkeeper_dashboard_plugins' );
 
-				return $order === 'desc' ? -$result : $result;
-			},
-		);
-
-		return $items;
+		echo '<div class="alignleft actions">';
+		if ( $outdated ) {
+			\printf(
+				'<a href="%s">%s</a> | <strong>%s</strong>',
+				esc_url( $page_url ),
+				esc_html__( 'All', 'site-bookkeeper-dashboard' ),
+				esc_html__( 'Outdated only', 'site-bookkeeper-dashboard' ),
+			);
+		} else {
+			\printf(
+				'<strong>%s</strong> | <a href="%s">%s</a>',
+				esc_html__( 'All', 'site-bookkeeper-dashboard' ),
+				esc_url( $page_url . '&outdated=1' ),
+				esc_html__( 'Outdated only', 'site-bookkeeper-dashboard' ),
+			);
+		}
+		echo '</div>';
 	}
 }

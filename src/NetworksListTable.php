@@ -10,7 +10,7 @@ namespace Apermo\SiteBookkeeperDashboard;
  * Renders the admin page table showing all monitored
  * networks with sortable columns and stale highlighting.
  */
-class NetworksListTable {
+class NetworksListTable extends ApiListTable {
 
 	/**
 	 * Stale threshold in seconds (48 hours).
@@ -18,6 +18,36 @@ class NetworksListTable {
 	 * @var int
 	 */
 	private const STALE_THRESHOLD = 172800;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		parent::__construct(
+			[
+				'singular' => 'network',
+				'plural'   => 'networks',
+				'ajax'     => false,
+			],
+		);
+	}
+
+	/**
+	 * Fetch network data from the hub API.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	protected function fetch_data(): array {
+		$client = ApiClient::from_settings();
+		$data = $client->get_networks();
+
+		if ( isset( $data['error'] ) ) {
+			$this->api_error = $data;
+			return [];
+		}
+
+		return $data['networks'] ?? [];
+	}
 
 	/**
 	 * Column definitions for the list table.
@@ -89,28 +119,13 @@ class NetworksListTable {
 	}
 
 	/**
-	 * Render a default column value.
-	 *
-	 * @param array<string, mixed> $item        Network data row.
-	 * @param string               $column_name Column key.
-	 *
-	 * @return string
-	 */
-	public function column_default( array $item, string $column_name ): string {
-		return esc_html( (string) ( $item[ $column_name ] ?? '' ) );
-	}
-
-	/**
-	 * Get the CSS class for a table row.
-	 *
-	 * Returns 'smd-stale' for stale networks to allow visual
-	 * highlighting via admin CSS.
+	 * Return CSS class for stale networks.
 	 *
 	 * @param array<string, mixed> $item Network data row.
 	 *
 	 * @return string
 	 */
-	public function get_row_class( array $item ): string {
+	protected function get_row_class( array $item ): string {
 		if ( $this->is_stale( $item ) ) {
 			return 'smd-stale';
 		}
@@ -119,34 +134,7 @@ class NetworksListTable {
 	}
 
 	/**
-	 * Sort items by the requested column.
-	 *
-	 * @param array<int, array<string, mixed>> $items   Network data rows.
-	 * @param string                           $orderby Column to sort by.
-	 * @param string                           $order   Sort direction (asc|desc).
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	public function sort_items( array $items, string $orderby = 'label', string $order = 'asc' ): array {
-		\usort(
-			$items,
-			static function ( array $left, array $right ) use ( $orderby, $order ): int {
-				$val_a  = (string) ( $left[ $orderby ] ?? '' );
-				$val_b  = (string) ( $right[ $orderby ] ?? '' );
-				$result = \strnatcasecmp( $val_a, $val_b );
-
-				return $order === 'desc' ? -$result : $result;
-			},
-		);
-
-		return $items;
-	}
-
-	/**
 	 * Check whether a network is considered stale.
-	 *
-	 * A network is stale when its last_seen timestamp is
-	 * older than 48 hours.
 	 *
 	 * @param array<string, mixed> $item Network data row.
 	 *
