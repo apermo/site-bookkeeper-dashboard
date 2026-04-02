@@ -56,7 +56,7 @@ class ThemeReport {
 		$labels = [];
 		foreach ( $sites as $site ) {
 			if ( \is_array( $site ) ) {
-				$labels[] = esc_html( (string) ( $site['label'] ?? $site['site_url'] ?? '' ) );
+				$labels[] = esc_html( (string) ( $site['label'] ?? \preg_replace( '#^https?://#', '', $site['site_url'] ?? '' ) ) );
 			}
 		}
 
@@ -87,7 +87,7 @@ class ThemeReport {
 			}
 
 			$version = (string) $site['version'];
-			$label   = (string) ( $site['label'] ?? $site['site_url'] ?? '' );
+			$label   = (string) ( $site['label'] ?? \preg_replace( '#^https?://#', '', $site['site_url'] ?? '' ) );
 
 			$by_version[ $version ][] = $label;
 		}
