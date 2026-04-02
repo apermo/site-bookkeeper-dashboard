@@ -156,3 +156,16 @@
 .column-slug {
 	width: 200px;
 }
+
+/* Users list table: column widths */
+.column-user_login {
+	width: 150px;
+}
+
+.column-display_name {
+	width: 150px;
+}
+
+.column-email {
+	width: 220px;
+}
