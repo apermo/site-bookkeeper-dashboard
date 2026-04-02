@@ -68,19 +68,23 @@ class PluginReportTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function test_column_sites_renders_count(): void {
+	public function test_column_sites_renders_names(): void {
 		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
 
 		$report = new PluginReport();
 		$item = [
 			'sites' => [
 				[ 'site_url' => 'https://one.example.tld' ],
-				[ 'site_url' => 'https://two.example.tld' ],
+				[
+					'site_url' => 'https://two.example.tld',
+					'label' => 'Site Two',
+				],
 			],
 		];
 
 		$output = $report->column_sites( $item );
-		$this->assertStringContainsString( '2', $output );
+		$this->assertStringContainsString( 'one.example.tld', $output );
+		$this->assertStringContainsString( 'Site Two', $output );
 	}
 
 	/**
