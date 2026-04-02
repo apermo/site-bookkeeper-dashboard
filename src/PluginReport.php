@@ -49,10 +49,9 @@ class PluginReport {
 	public function column_sites( array $item ): string {
 		$sites = $item['sites'] ?? [];
 		if ( ! \is_array( $sites ) ) {
-			return '0';
+			return '—';
 		}
 
-		$count = \count( $sites );
 		$labels = [];
 		foreach ( $sites as $site ) {
 			if ( \is_array( $site ) ) {
@@ -60,11 +59,7 @@ class PluginReport {
 			}
 		}
 
-		return \sprintf(
-			'<span title="%s">%s</span>',
-			\implode( ', ', $labels ),
-			esc_html( (string) $count ),
-		);
+		return \implode( ', ', $labels );
 	}
 
 	/**
