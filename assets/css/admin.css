@@ -148,6 +148,11 @@
 	width: 150px;
 }
 
+/* Users table: auto-size columns instead of fixed equal widths */
+.users .wp-list-table.fixed {
+	table-layout: auto;
+}
+
 /* Report tables: column widths */
 .column-sites {
 	width: 60px;
@@ -157,12 +162,3 @@
 	width: 200px;
 }
 
-/* Users list table: column widths */
-.column-user_login,
-.column-display_name {
-	width: 12%;
-}
-
-.column-email {
-	width: 18%;
-}
