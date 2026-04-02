@@ -20,6 +20,7 @@ class Admin {
 	public static function init(): void {
 		add_action( 'admin_menu', [ self::class, 'register_pages' ] );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_styles' ] );
+		add_action( 'admin_init', [ self::class, 'handle_cache_flush' ] );
 	}
 
 	/**
@@ -105,6 +106,55 @@ class Admin {
 	}
 
 	/**
+	 * Handle the cache flush action.
+	 *
+	 * Clears all API transients and redirects back to the referring page.
+	 *
+	 * @return void
+	 */
+	public static function handle_cache_flush(): void {
+		if ( ! isset( $_GET['sbd_flush'] ) || $_GET['sbd_flush'] !== '1' ) {
+			return;
+		}
+
+		$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'sbd_flush_cache' ) ) {
+			return;
+		}
+
+		ApiClient::flush_all_caches();
+
+		$redirect = remove_query_arg( [ 'sbd_flush', '_wpnonce' ] );
+		wp_safe_redirect( $redirect );
+		exit();
+	}
+
+	/**
+	 * Render the "last checked / check again" line.
+	 *
+	 * @return void
+	 */
+	private static function render_last_checked(): void {
+		$flush_url = wp_nonce_url(
+			add_query_arg( 'sbd_flush', '1' ),
+			'sbd_flush_cache',
+		);
+
+		\printf(
+			'<p class="smd-last-checked">%s <a href="%s">%s</a></p>',
+			esc_html(
+				\sprintf(
+					/* translators: %s: formatted date/time */
+					__( 'Last checked on %s.', 'site-bookkeeper-dashboard' ),
+					wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ),
+				),
+			),
+			esc_url( $flush_url ),
+			esc_html__( 'Check again.', 'site-bookkeeper-dashboard' ),
+		);
+	}
+
+	/**
 	 * Render the sites overview page.
 	 *
 	 * @return void
@@ -129,6 +179,7 @@ class Admin {
 		if ( isset( $data['error'] ) ) {
 			self::render_error( $data );
 		} else {
+			self::render_last_checked();
 			self::render_sites_table( $table, $sites );
 		}
 
@@ -248,6 +299,7 @@ class Admin {
 		if ( isset( $data['error'] ) ) {
 			self::render_error( $data );
 		} else {
+			self::render_last_checked();
 			self::render_report_filter( 'site_bookkeeper_dashboard_plugins', $outdated );
 			self::render_report_table( $report, $plugins );
 		}
@@ -277,6 +329,7 @@ class Admin {
 		if ( isset( $data['error'] ) ) {
 			self::render_error( $data );
 		} else {
+			self::render_last_checked();
 			self::render_report_filter( 'site_bookkeeper_dashboard_themes', $outdated );
 			self::render_report_table( $report, $themes );
 		}

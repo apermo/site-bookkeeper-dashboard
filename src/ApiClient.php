@@ -64,6 +64,24 @@ class ApiClient {
 	}
 
 	/**
+	 * Clear all API caches by deleting transients with the cache prefix.
+	 *
+	 * @return void
+	 */
+	public static function flush_all_caches(): void {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Transient bulk delete, no object cache equivalent.
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+				'_transient_' . self::CACHE_PREFIX . '%',
+				'_transient_timeout_' . self::CACHE_PREFIX . '%',
+			),
+		);
+	}
+
+	/**
 	 * Fetch all sites from the hub.
 	 *
 	 * @return array<string, mixed>
