@@ -148,17 +148,21 @@
 	width: 150px;
 }
 
-/* Users table: narrow columns for text, let Sites expand */
+/* Users table: constrain text columns, give Sites the majority */
 .wp-list-table.users .column-user_login {
-	width: 120px;
-}
-
-.wp-list-table.users .column-email {
-	width: 200px;
+	width: 10%;
 }
 
 .wp-list-table.users .column-display_name {
-	width: 130px;
+	width: 10%;
+}
+
+.wp-list-table.users .column-email {
+	width: 18%;
+}
+
+.wp-list-table.users .column-sites {
+	width: 62%;
 }
 
 /* Report tables: column widths */
