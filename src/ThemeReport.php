@@ -23,7 +23,6 @@ class ThemeReport {
 			'slug' => 'Slug',
 			'sites' => 'Sites',
 			'versions' => 'Versions',
-			'update_status' => 'Update Status',
 		];
 	}
 
@@ -69,6 +68,7 @@ class ThemeReport {
 		}
 
 		$by_version = [];
+		$outdated_versions = [];
 		foreach ( $sites as $site ) {
 			if ( ! \is_array( $site ) || ! isset( $site['version'] ) ) {
 				continue;
@@ -78,11 +78,17 @@ class ThemeReport {
 			$domain  = (string) \preg_replace( '#^https?://#', '', $site['site_url'] ?? '' );
 
 			$by_version[ $version ][] = $domain;
+
+			$update = (string) ( $site['update_available'] ?? '' );
+			if ( $update !== '' ) {
+				$outdated_versions[ $version ] = true;
+			}
 		}
 
-		$out = '<ul style="margin:0">';
+		$out = '<ul class="smd-version-list">';
 		foreach ( $by_version as $version => $domains ) {
-			$out .= '<li>' . esc_html( $version ) . '<ul>';
+			$emoji = isset( $outdated_versions[ $version ] ) ? '🟠' : '✅';
+			$out .= '<li>' . $emoji . ' <strong>' . esc_html( $version ) . '</strong><ul>';
 			foreach ( $domains as $domain ) {
 				$out .= '<li>' . esc_html( $domain ) . '</li>';
 			}
@@ -90,46 +96,6 @@ class ThemeReport {
 		}
 
 		return $out . '</ul>';
-	}
-
-	/**
-	 * Render the update status column.
-	 *
-	 * Shows whether any site has an outdated version.
-	 *
-	 * @param array<string, mixed> $item Theme data row.
-	 *
-	 * @return string
-	 */
-	public function column_update_status( array $item ): string {
-		$sites = $item['sites'] ?? [];
-		if ( ! \is_array( $sites ) ) {
-			return '';
-		}
-
-		$outdated = 0;
-		foreach ( $sites as $site ) {
-			if ( \is_array( $site ) ) {
-				$update = (string) ( $site['update_available'] ?? '' );
-				if ( $update !== '' ) {
-					$outdated++;
-				}
-			}
-		}
-
-		if ( $outdated > 0 ) {
-			return \sprintf(
-				'<span class="smd-has-updates">%s</span>',
-				esc_html(
-					\sprintf(
-						'%d outdated',
-						$outdated,
-					),
-				),
-			);
-		}
-
-		return esc_html( 'Up to date' );
 	}
 
 	/**

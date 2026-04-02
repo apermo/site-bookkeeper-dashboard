@@ -51,6 +51,17 @@
 	color: #fff;
 }
 
+/* Version list in reports */
+.smd-version-list {
+	margin: 0;
+	list-style: none;
+}
+
+.smd-version-list ul {
+	margin: 2px 0 4px 24px;
+	list-style: disc;
+}
+
 /* Detail page sections */
 .smd-detail-section {
 	margin-bottom: 20px;

@@ -513,10 +513,9 @@ class Admin {
 		string $column_name,
 	): string {
 		return match ( $column_name ) {
-			'sites'         => $report->column_sites( $item ),
-			'versions'      => $report->column_versions( $item ),
-			'update_status' => $report->column_update_status( $item ),
-			default         => $report->column_default( $item, $column_name ),
+			'sites'    => $report->column_sites( $item ),
+			'versions' => $report->column_versions( $item ),
+			default    => $report->column_default( $item, $column_name ),
 		};
 	}
 }
