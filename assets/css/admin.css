@@ -60,8 +60,23 @@
 	margin-bottom: 10px;
 }
 
-/* Key-value table for custom fields */
+/* Key-value table for custom fields and network info */
 .smd-kv-table th {
 	width: 200px;
 	text-align: left;
+}
+
+/* Network list table: subsite count column */
+.column-subsite_count {
+	width: 100px;
+}
+
+/* Network list table: status column */
+.column-status {
+	width: 80px;
+}
+
+/* Sites list table: network column */
+.column-network {
+	width: 150px;
 }
