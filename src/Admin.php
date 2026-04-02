@@ -148,6 +148,7 @@ class Admin {
 		SlugResolver::flush();
 
 		$redirect = remove_query_arg( [ 'sbd_flush_slugs', '_wpnonce' ] );
+		$redirect = add_query_arg( 'sbd_slugs_flushed', '1', $redirect );
 		wp_safe_redirect( $redirect );
 		exit();
 	}
@@ -571,10 +572,6 @@ class Admin {
 	 */
 	private static function render_report_filter( string $page_slug, bool $active ): void {
 		$url = admin_url( 'admin.php?page=' . $page_slug );
-		$flush_slug_url = wp_nonce_url(
-			add_query_arg( 'sbd_flush_slugs', '1' ),
-			'sbd_flush_slugs',
-		);
 
 		echo '<p>';
 		if ( $active ) {
@@ -592,11 +589,6 @@ class Admin {
 				esc_html__( 'Outdated only', 'site-bookkeeper-dashboard' ),
 			);
 		}
-		\printf(
-			' | <a href="%s" class="smd-last-checked">%s</a>',
-			esc_url( $flush_slug_url ),
-			esc_html__( 'Reset link cache', 'site-bookkeeper-dashboard' ),
-		);
 		echo '</p>';
 	}
 

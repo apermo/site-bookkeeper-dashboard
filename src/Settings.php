@@ -227,6 +227,11 @@ class Settings {
 	 * @return void
 	 */
 	public static function render_page(): void {
+		$flush_url = wp_nonce_url(
+			admin_url( 'options-general.php?page=' . self::OPTION_GROUP . '&sbd_flush_slugs=1' ),
+			'sbd_flush_slugs',
+		);
+		$flushed = isset( $_GET['sbd_slugs_flushed'] ) && $_GET['sbd_slugs_flushed'] === '1'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Site Bookkeeper Dashboard Settings', 'site-bookkeeper-dashboard' ); ?></h1>
@@ -237,6 +242,31 @@ class Settings {
 				submit_button();
 				?>
 			</form>
+			<hr>
+			<h2><?php esc_html_e( 'Cache', 'site-bookkeeper-dashboard' ); ?></h2>
+			<p>
+				<?php
+				echo esc_html(
+					\sprintf(
+						/* translators: %d: number of cached entries */
+						__( 'Plugin and theme names link to WordPress.org when available. Results are cached permanently. Currently %d entries cached.', 'site-bookkeeper-dashboard' ),
+						SlugResolver::count(),
+					),
+				);
+				?>
+			</p>
+			<?php
+			if ( $flushed ) {
+				echo '<div class="notice notice-success inline"><p>';
+				esc_html_e( 'Link cache cleared.', 'site-bookkeeper-dashboard' );
+				echo '</p></div>';
+			}
+			?>
+			<p>
+				<a href="<?php echo esc_url( $flush_url ); ?>" class="button">
+					<?php esc_html_e( 'Reset link cache', 'site-bookkeeper-dashboard' ); ?>
+				</a>
+			</p>
 		</div>
 		<?php
 	}

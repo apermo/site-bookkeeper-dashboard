@@ -49,6 +49,17 @@ class SlugResolver {
 	}
 
 	/**
+	 * Get the number of cached slug resolutions.
+	 *
+	 * @return int
+	 */
+	public static function count(): int {
+		self::load_cache();
+
+		return \count( self::$cache );
+	}
+
+	/**
 	 * Clear the entire slug cache.
 	 *
 	 * @return void
