@@ -140,18 +140,30 @@ class Admin {
 			'sbd_flush_cache',
 		);
 
-		\printf(
-			'<p class="smd-last-checked">%s <a href="%s">%s</a></p>',
-			esc_html(
-				\sprintf(
-					/* translators: %s: formatted date/time */
-					__( 'Last checked on %s.', 'site-bookkeeper-dashboard' ),
-					wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ),
+		$last_checked = ApiClient::get_last_checked();
+		$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+
+		if ( $last_checked !== null ) {
+			$date_string = wp_date( $format, $last_checked );
+			\printf(
+				'<p class="smd-last-checked">%s <a href="%s">%s</a></p>',
+				esc_html(
+					\sprintf(
+						/* translators: %s: formatted date/time */
+						__( 'Last checked on %s.', 'site-bookkeeper-dashboard' ),
+						$date_string,
+					),
 				),
-			),
-			esc_url( $flush_url ),
-			esc_html__( 'Check again.', 'site-bookkeeper-dashboard' ),
-		);
+				esc_url( $flush_url ),
+				esc_html__( 'Check again.', 'site-bookkeeper-dashboard' ),
+			);
+		} else {
+			\printf(
+				'<p class="smd-last-checked"><a href="%s">%s</a></p>',
+				esc_url( $flush_url ),
+				esc_html__( 'Check now.', 'site-bookkeeper-dashboard' ),
+			);
+		}
 	}
 
 	/**

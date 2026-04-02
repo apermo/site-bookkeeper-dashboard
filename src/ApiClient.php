@@ -68,6 +68,22 @@ class ApiClient {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Get the timestamp of the last API fetch.
+	 *
+	 * @return int|null Unix timestamp or null if no cache exists.
+	 */
+	public static function get_last_checked(): ?int {
+		$timestamp = get_transient( self::CACHE_PREFIX . 'last_checked' );
+
+		return $timestamp !== false ? (int) $timestamp : null;
+	}
+
+	/**
+	 * Clear all API caches by deleting transients with the cache prefix.
+	 *
+	 * @return void
+	 */
 	public static function flush_all_caches(): void {
 		global $wpdb;
 
@@ -262,6 +278,7 @@ class ApiClient {
 		}
 
 		set_transient( $cache_key, $data, self::CACHE_TTL );
+		set_transient( self::CACHE_PREFIX . 'last_checked', \time(), self::CACHE_TTL );
 
 		return $data;
 	}
