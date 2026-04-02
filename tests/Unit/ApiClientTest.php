@@ -331,6 +331,118 @@ class ApiClientTest extends TestCase {
 	}
 
 	/**
+	 * Verify get_networks returns cached data.
+	 *
+	 * @return void
+	 */
+	public function test_get_networks_returns_cached_data(): void {
+		$cached = [
+			'networks' => [
+				[
+					'id'            => 'net-uuid-1',
+					'main_site_url' => 'https://network.example.tld',
+					'label'         => 'My Network',
+					'subsite_count' => 5,
+					'last_seen'     => '2026-04-01T12:00:00+00:00',
+				],
+			],
+		];
+
+		Functions\expect( 'get_transient' )
+			->once()
+			->with( 'sbd_api_networks' )
+			->andReturn( $cached );
+
+		$client = $this->create_client();
+		$result = $client->get_networks();
+
+		$this->assertSame( $cached, $result );
+	}
+
+	/**
+	 * Verify get_networks makes HTTP request when no cache.
+	 *
+	 * @return void
+	 */
+	public function test_get_networks_makes_request_when_no_cache(): void {
+		$body = '{"networks":[{"id":"net-uuid-1","main_site_url":"https://network.example.tld"}]}';
+
+		$this->stub_uncached_request( 'sbd_api_networks', 'https://monitor.example.tld/networks', $body );
+
+		Functions\expect( 'set_transient' )
+			->once()
+			->with(
+				'sbd_api_networks',
+				[
+					'networks' => [
+						[
+							'id'            => 'net-uuid-1',
+							'main_site_url' => 'https://network.example.tld',
+						],
+					],
+				],
+				300,
+			);
+
+		$client = $this->create_client();
+		$result = $client->get_networks();
+
+		$this->assertSame(
+			[
+				'networks' => [
+					[
+						'id'            => 'net-uuid-1',
+						'main_site_url' => 'https://network.example.tld',
+					],
+				],
+			],
+			$result,
+		);
+	}
+
+	/**
+	 * Verify get_network makes correct request.
+	 *
+	 * @return void
+	 */
+	public function test_get_network_makes_request(): void {
+		$body = '{"id":"net-uuid-1","main_site_url":"https://network.example.tld"}';
+
+		Functions\expect( 'get_transient' )
+			->once()
+			->andReturn( false );
+
+		Functions\expect( 'wp_remote_get' )
+			->once()
+			->with(
+				'https://monitor.example.tld/networks/net-uuid-1',
+				Mockery::type( 'array' ),
+			)
+			->andReturn(
+				[
+					'response' => [ 'code' => 200 ],
+					'body'     => $body,
+				],
+			);
+
+		Functions\expect( 'is_wp_error' )->once()->andReturn( false );
+		Functions\expect( 'wp_remote_retrieve_response_code' )->once()->andReturn( 200 );
+		Functions\expect( 'wp_remote_retrieve_body' )->once()->andReturn( $body );
+		Functions\expect( 'set_transient' )->once();
+
+		$client = $this->create_client();
+		$result = $client->get_network( 'net-uuid-1' );
+
+		$this->assertSame(
+			[
+				'id'            => 'net-uuid-1',
+				'main_site_url' => 'https://network.example.tld',
+			],
+			$result,
+		);
+	}
+
+	/**
 	 * Verify clear_cache deletes the matching transient.
 	 *
 	 * @return void

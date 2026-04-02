@@ -106,6 +106,26 @@ class ApiClient {
 	}
 
 	/**
+	 * Fetch all networks from the hub.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_networks(): array {
+		return $this->request( 'networks' );
+	}
+
+	/**
+	 * Fetch a single network by ID.
+	 *
+	 * @param string $network_id Network UUID.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_network( string $network_id ): array {
+		return $this->request( 'networks/' . $network_id );
+	}
+
+	/**
 	 * Clear a specific API cache entry.
 	 *
 	 * @param string $endpoint The endpoint key (e.g. 'sites').
