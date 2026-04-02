@@ -11,6 +11,16 @@
 	color: #a7aaad;
 }
 
+/* Overdue sites */
+.smd-overdue {
+	border-left: 3px solid #d63638;
+}
+
+/* Category column */
+.column-category_name {
+	width: 100px;
+}
+
 /* Pending updates highlight */
 .smd-has-updates {
 	display: inline-block;

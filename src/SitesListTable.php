@@ -56,10 +56,13 @@ class SitesListTable extends ApiListTable {
 		$sites = $data['sites'] ?? [];
 		$this->has_networks = $this->detect_networks( $sites );
 
-		// Add computed pending_updates count for sorting.
+		// Add computed fields for sorting/filtering.
 		foreach ( $sites as &$site ) {
 			$site['pending_updates'] = ( (int) ( $site['pending_plugin_updates'] ?? 0 ) )
 				+ ( (int) ( $site['pending_theme_updates'] ?? 0 ) );
+			$cat = $site['category'] ?? null;
+			$site['category_name'] = \is_array( $cat ) ? ( $cat['name'] ?? '' ) : '';
+			$site['category_slug'] = \is_array( $cat ) ? ( $cat['slug'] ?? '' ) : '';
 		}
 		unset( $site );
 
@@ -76,6 +79,7 @@ class SitesListTable extends ApiListTable {
 	public function get_columns(): array {
 		$columns = [
 			'label'            => 'Site',
+			'category_name'    => 'Category',
 			'environment_type' => 'Environment',
 			'wp_version'       => 'WordPress',
 			'php_version'      => 'PHP',
@@ -101,6 +105,7 @@ class SitesListTable extends ApiListTable {
 	public function get_sortable_columns(): array {
 		return [
 			'label'            => [ 'label', false ],
+			'category_name'    => [ 'category_name', false ],
 			'environment_type' => [ 'environment_type', false ],
 			'wp_version'       => [ 'wp_version', false ],
 			'php_version'      => [ 'php_version', false ],
@@ -123,12 +128,14 @@ class SitesListTable extends ApiListTable {
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only filter params.
+		$current_cat = isset( $_GET['category'] ) ? sanitize_text_field( wp_unslash( $_GET['category'] ) ) : '';
 		$current_env = isset( $_GET['environment_type'] ) ? sanitize_text_field( wp_unslash( $_GET['environment_type'] ) ) : '';
 		$current_wp = isset( $_GET['wp_version'] ) ? sanitize_text_field( wp_unslash( $_GET['wp_version'] ) ) : '';
 		$current_updates = isset( $_GET['has_updates'] ) ? sanitize_text_field( wp_unslash( $_GET['has_updates'] ) ) : '';
 		// phpcs:enable
 
 		echo '<div class="alignleft actions">';
+		$this->render_category_filter( $current_cat );
 		$this->render_env_filter( $current_env );
 		$this->render_wp_filter( $current_wp );
 		$this->render_updates_filter( $current_updates );
@@ -145,10 +152,18 @@ class SitesListTable extends ApiListTable {
 	 */
 	private function apply_filters( array $items ): array {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only filter params.
+		$cat_filter = isset( $_GET['category'] ) ? sanitize_text_field( wp_unslash( $_GET['category'] ) ) : '';
 		$env_filter = isset( $_GET['environment_type'] ) ? sanitize_text_field( wp_unslash( $_GET['environment_type'] ) ) : '';
 		$wp_filter = isset( $_GET['wp_version'] ) ? sanitize_text_field( wp_unslash( $_GET['wp_version'] ) ) : '';
 		$updates_filter = isset( $_GET['has_updates'] ) ? sanitize_text_field( wp_unslash( $_GET['has_updates'] ) ) : '';
 		// phpcs:enable
+
+		if ( $cat_filter !== '' ) {
+			$items = \array_filter(
+				$items,
+				static fn( array $item ): bool => ( $item['category_slug'] ?? '' ) === $cat_filter,
+			);
+		}
 
 		if ( $env_filter !== '' ) {
 			$items = \array_filter(
@@ -177,6 +192,44 @@ class SitesListTable extends ApiListTable {
 		}
 
 		return \array_values( $items );
+	}
+
+	/**
+	 * Render the environment type filter dropdown.
+	 *
+	 * @param string $current Currently selected value.
+	 *
+	 * @return void
+	 */
+	/**
+	 * Render the category filter dropdown.
+	 *
+	 * @param string $current Currently selected slug.
+	 *
+	 * @return void
+	 */
+	private function render_category_filter( string $current ): void {
+		$categories = [];
+		foreach ( $this->all_items as $item ) {
+			$slug = $item['category_slug'] ?? '';
+			$name = $item['category_name'] ?? '';
+			if ( $slug !== '' && $name !== '' ) {
+				$categories[ $slug ] = $name;
+			}
+		}
+		\asort( $categories );
+
+		echo '<select name="category">';
+		echo '<option value="">' . esc_html__( 'All categories', 'site-bookkeeper-dashboard' ) . '</option>';
+		foreach ( $categories as $slug => $name ) {
+			\printf(
+				'<option value="%s" %s>%s</option>',
+				esc_attr( $slug ),
+				selected( $current, $slug, false ),
+				esc_html( $name ),
+			);
+		}
+		echo '</select>';
 	}
 
 	/**
@@ -397,6 +450,10 @@ class SitesListTable extends ApiListTable {
 	protected function get_row_class( array $item ): string {
 		if ( isset( $item['stale'] ) && $item['stale'] === true ) {
 			return 'smd-stale';
+		}
+
+		if ( isset( $item['overdue'] ) && $item['overdue'] === true ) {
+			return 'smd-overdue';
 		}
 
 		return '';

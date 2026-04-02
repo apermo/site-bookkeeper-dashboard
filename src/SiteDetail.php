@@ -20,12 +20,114 @@ class SiteDetail {
 	 * @return void
 	 */
 	public static function render( array $site ): void {
+		self::render_category_and_notes( $site );
 		self::render_environment( $site );
 		self::render_plugins( $site );
 		self::render_themes( $site );
 		self::render_custom_fields( $site );
 		self::render_users( $site );
 		self::render_roles( $site );
+	}
+
+	/**
+	 * Render category selector and notes editor.
+	 *
+	 * @param array<string, mixed> $site Site data.
+	 *
+	 * @return void
+	 */
+	private static function render_category_and_notes( array $site ): void {
+		$site_id = (string) ( $site['id'] ?? '' );
+		$category_id = (string) ( $site['category_id'] ?? '' );
+		$notes = (string) ( $site['notes'] ?? '' );
+		$notes_hash = (string) ( $site['notes_hash'] ?? '' );
+
+		$client = ApiClient::from_settings();
+		$categories_data = $client->get_categories();
+		$categories = $categories_data['categories'] ?? [];
+
+		// Handle save action.
+		self::handle_site_meta_save( $site_id );
+
+		echo '<div class="smd-detail-section">';
+		echo '<h2>' . esc_html__( 'Category & Notes', 'site-bookkeeper-dashboard' ) . '</h2>';
+		echo '<form method="post">';
+		wp_nonce_field( 'sbd_site_meta_' . $site_id );
+		echo '<input type="hidden" name="sbd_site_id" value="' . esc_attr( $site_id ) . '" />';
+		echo '<input type="hidden" name="sbd_notes_hash" value="' . esc_attr( $notes_hash ) . '" />';
+
+		echo '<table class="form-table"><tbody>';
+
+		// Category selector.
+		echo '<tr><th scope="row">' . esc_html__( 'Category', 'site-bookkeeper-dashboard' ) . '</th><td>';
+		echo '<select name="sbd_category_id">';
+		echo '<option value="">' . esc_html__( '— None —', 'site-bookkeeper-dashboard' ) . '</option>';
+		foreach ( $categories as $category ) {
+			\printf(
+				'<option value="%s" %s>%s (%dh)</option>',
+				esc_attr( (string) $category['id'] ),
+				selected( $category_id, (string) $category['id'], false ),
+				esc_html( (string) $category['name'] ),
+				(int) ( $category['overdue_hours'] ?? 48 ),
+			);
+		}
+		echo '</select></td></tr>';
+
+		// Notes textarea.
+		echo '<tr><th scope="row">' . esc_html__( 'Notes', 'site-bookkeeper-dashboard' ) . '</th><td>';
+		echo '<textarea name="sbd_notes" rows="4" class="large-text">' . esc_textarea( $notes ) . '</textarea>';
+		echo '</td></tr>';
+
+		echo '</tbody></table>';
+		submit_button( __( 'Save', 'site-bookkeeper-dashboard' ) );
+		echo '</form></div>';
+	}
+
+	/**
+	 * Handle the site meta save form submission.
+	 *
+	 * @param string $site_id Site UUID.
+	 *
+	 * @return void
+	 */
+	private static function handle_site_meta_save( string $site_id ): void {
+		if ( ! isset( $_POST['sbd_site_id'] ) || $_POST['sbd_site_id'] !== $site_id ) {
+			return;
+		}
+
+		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'sbd_site_meta_' . $site_id ) ) {
+			return;
+		}
+
+		$client = ApiClient::from_settings();
+		$patch_data = [
+			'category_id' => sanitize_text_field( wp_unslash( $_POST['sbd_category_id'] ?? '' ) ),
+			'notes' => sanitize_textarea_field( wp_unslash( $_POST['sbd_notes'] ?? '' ) ),
+			'notes_hash' => sanitize_text_field( wp_unslash( $_POST['sbd_notes_hash'] ?? '' ) ),
+		];
+
+		$result = $client->patch_site( $site_id, $patch_data );
+
+		if ( isset( $result['error'] ) && $result['error'] === 'conflict' ) {
+			echo '<div class="notice notice-warning"><p>';
+			esc_html_e( 'Notes were modified by another user. Your changes were not saved. Please review and try again.', 'site-bookkeeper-dashboard' );
+			echo '</p></div>';
+			return;
+		}
+
+		if ( isset( $result['error'] ) ) {
+			\printf(
+				'<div class="notice notice-error"><p>%s</p></div>',
+				esc_html( (string) ( $result['message'] ?? 'Save failed.' ) ),
+			);
+			return;
+		}
+
+		ApiClient::flush_all_caches();
+		echo '<div class="notice notice-success"><p>';
+		esc_html_e( 'Saved.', 'site-bookkeeper-dashboard' );
+		echo '</p></div>';
 	}
 
 	/**

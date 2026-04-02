@@ -129,6 +129,61 @@ class ApiClient {
 	}
 
 	/**
+	 * Fetch all categories.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_categories(): array {
+		return $this->request( 'categories' );
+	}
+
+	/**
+	 * Create a category.
+	 *
+	 * @param array<string, mixed> $data Category data.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function create_category( array $data ): array {
+		return $this->write_request( 'POST', 'categories', $data );
+	}
+
+	/**
+	 * Update a category.
+	 *
+	 * @param string               $category_id Category UUID.
+	 * @param array<string, mixed> $data        Category data.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function update_category( string $category_id, array $data ): array {
+		return $this->write_request( 'PUT', 'categories/' . $category_id, $data );
+	}
+
+	/**
+	 * Delete a category.
+	 *
+	 * @param string $category_id Category UUID.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function delete_category( string $category_id ): array {
+		return $this->write_request( 'DELETE', 'categories/' . $category_id );
+	}
+
+	/**
+	 * Update site category and/or notes.
+	 *
+	 * @param string               $site_id Site UUID.
+	 * @param array<string, mixed> $data    Patch data.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function patch_site( string $site_id, array $data ): array {
+		return $this->write_request( 'PATCH', 'sites/' . $site_id, $data );
+	}
+
+	/**
 	 * Fetch vulnerability provider status.
 	 *
 	 * @return array<string, mixed>
@@ -260,6 +315,56 @@ class ApiClient {
 		}
 
 		return $this->decode_and_cache( $body, $cache_key );
+	}
+
+	/**
+	 * Perform an uncached write request (POST/PUT/PATCH/DELETE).
+	 *
+	 * @param string                    $method   HTTP method.
+	 * @param string                    $endpoint Relative API endpoint.
+	 * @param array<string, mixed>|null $data     JSON body data.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function write_request( string $method, string $endpoint, ?array $data = null ): array {
+		$url = $this->build_url( $endpoint, [] );
+
+		$args = [
+			'method'  => $method,
+			'headers' => [
+				'Authorization' => 'Bearer ' . $this->token,
+				'Accept'        => 'application/json',
+				'Content-Type'  => 'application/json',
+			],
+			'timeout' => 15,
+		];
+
+		if ( $data !== null ) {
+			$args['body'] = (string) wp_json_encode( $data );
+		}
+
+		$response = wp_remote_request( $url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return [
+				'error'   => 'connection_error',
+				'message' => $response->get_error_message(),
+			];
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( $status_code === 204 ) {
+			return [ 'status' => 'ok' ];
+		}
+
+		$decoded = \json_decode( $body, true );
+
+		return \is_array( $decoded ) ? $decoded : [
+			'error'   => 'http_error',
+			'message' => \sprintf( 'Unexpected HTTP %d response.', $status_code ),
+		];
 	}
 
 	/**
