@@ -158,14 +158,11 @@
 }
 
 /* Users list table: column widths */
-.column-user_login {
-	width: 150px;
-}
-
+.column-user_login,
 .column-display_name {
-	width: 150px;
+	width: 12%;
 }
 
 .column-email {
-	width: 220px;
+	width: 18%;
 }
