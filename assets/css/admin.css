@@ -169,12 +169,12 @@
 	.wp-list-table.users .column-user_login,
 	.wp-list-table.users .column-display_name {
 		width: 10%;
-		white-space: nowrap;
 	}
 
 	.wp-list-table.users .column-email {
 		width: 15%;
-		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.wp-list-table.users .column-sites {
