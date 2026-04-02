@@ -174,6 +174,21 @@ abstract class ApiListTable extends WP_List_Table {
 	}
 
 	/**
+	 * Format a site label as "Name (domain)" for display in dropdowns.
+	 *
+	 * @param string $label    Site label or name.
+	 * @param string $site_url Full site URL.
+	 *
+	 * @return string Formatted label.
+	 */
+	protected function format_site_label( string $label, string $site_url ): string {
+		$domain = (string) \preg_replace( '#^https?://#', '', $site_url );
+		$name = $label !== '' ? $label : $domain;
+
+		return $name . ' (' . $domain . ')';
+	}
+
+	/**
 	 * Render the "Last checked / Check again" line.
 	 *
 	 * @return void
