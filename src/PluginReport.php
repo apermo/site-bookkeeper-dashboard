@@ -80,27 +80,28 @@ class PluginReport {
 			return '';
 		}
 
-		$versions = [];
+		$by_version = [];
 		foreach ( $sites as $site ) {
-			if ( \is_array( $site ) && isset( $site['version'] ) ) {
-				$version = (string) $site['version'];
-				if ( ! isset( $versions[ $version ] ) ) {
-					$versions[ $version ] = 0;
-				}
-				$versions[ $version ]++;
+			if ( ! \is_array( $site ) || ! isset( $site['version'] ) ) {
+				continue;
 			}
+
+			$version = (string) $site['version'];
+			$label   = (string) ( $site['label'] ?? $site['site_url'] ?? '' );
+
+			$by_version[ $version ][] = $label;
 		}
 
 		$parts = [];
-		foreach ( $versions as $version => $count ) {
+		foreach ( $by_version as $version => $labels ) {
 			$parts[] = \sprintf(
-				'%s (%d)',
+				'<strong>%s</strong>: %s',
 				esc_html( $version ),
-				$count,
+				esc_html( \implode( ', ', $labels ) ),
 			);
 		}
 
-		return \implode( ', ', $parts );
+		return \implode( '<br>', $parts );
 	}
 
 	/**
