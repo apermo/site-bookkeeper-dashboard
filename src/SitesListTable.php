@@ -172,6 +172,30 @@ class SitesListTable {
 	}
 
 	/**
+	 * Render a date/time column with localized formatting.
+	 *
+	 * @param array<string, mixed> $item        Site data row.
+	 * @param string               $column_name Column key.
+	 *
+	 * @return string
+	 */
+	public function column_datetime( array $item, string $column_name ): string {
+		$raw = (string) ( $item[ $column_name ] ?? '' );
+		if ( $raw === '' ) {
+			return '&mdash;';
+		}
+
+		$timestamp = \strtotime( $raw );
+		if ( $timestamp === false ) {
+			return esc_html( $raw );
+		}
+
+		$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+
+		return esc_html( (string) wp_date( $format, $timestamp ) );
+	}
+
+	/**
 	 * Render a default column value.
 	 *
 	 * @param array<string, mixed> $item        Site data row.

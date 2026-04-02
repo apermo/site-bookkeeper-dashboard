@@ -488,6 +488,8 @@ class Admin {
 			'wp_version'      => $table->column_wp_version( $item ),
 			'pending_updates' => $table->column_pending_updates( $item ),
 			'network'         => $table->column_network( $item ),
+			'last_seen',
+			'last_updated'    => $table->column_datetime( $item, $column_name ),
 			default           => $table->column_default( $item, $column_name ),
 		};
 	}
