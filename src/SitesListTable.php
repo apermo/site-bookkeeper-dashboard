@@ -89,18 +89,34 @@ class SitesListTable {
 	 * @return string
 	 */
 	public function column_wp_version( array $item ): string {
-		$version = esc_html( (string) ( $item['wp_version'] ?? '' ) );
-		$update  = $item['wp_update_available'] ?? '';
+		$version = (string) ( $item['wp_version'] ?? '' );
+		$update  = (string) ( $item['wp_update_available'] ?? '' );
 
-		if ( $update !== '' ) {
+		if ( $update === '' ) {
 			return \sprintf(
-				'%s <span class="smd-update-available">(%s)</span>',
-				$version,
-				esc_html( (string) $update ),
+				'<span class="smd-wp-current">%s</span>',
+				esc_html( $version ),
 			);
 		}
 
-		return $version;
+		// Same major.minor (e.g. 6.7.1 → 6.7.2) = patch behind.
+		// Different major.minor (e.g. 6.6.2 → 6.7.2) = old major, acceptable.
+		$current_major = \implode( '.', \array_slice( \explode( '.', $version ), 0, 2 ) );
+		$update_major  = \implode( '.', \array_slice( \explode( '.', $update ), 0, 2 ) );
+
+		if ( $current_major !== $update_major ) {
+			return \sprintf(
+				'<span class="smd-wp-acceptable">%s</span> <span class="smd-update-available">(%s)</span>',
+				esc_html( $version ),
+				esc_html( $update ),
+			);
+		}
+
+		return \sprintf(
+			'%s <span class="smd-update-available">(%s)</span>',
+			esc_html( $version ),
+			esc_html( $update ),
+		);
 	}
 
 	/**
@@ -124,7 +140,7 @@ class SitesListTable {
 			);
 		}
 
-		return esc_html( (string) $total );
+		return '<span class="smd-no-updates">0</span>';
 	}
 
 	/**

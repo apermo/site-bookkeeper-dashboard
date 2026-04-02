@@ -85,6 +85,8 @@ class PluginReport {
 			}
 		}
 
+		\uksort( $by_version, 'version_compare' );
+
 		$out = '<ul class="smd-version-list">';
 		foreach ( $by_version as $version => $domains ) {
 			$emoji = isset( $outdated_versions[ $version ] ) ? '🟠' : '✅';

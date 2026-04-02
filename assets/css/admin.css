@@ -21,7 +21,26 @@
 	font-weight: 600;
 }
 
-/* WP version update available */
+.smd-no-updates {
+	display: inline-block;
+	background: #00a32a;
+	color: #fff;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-weight: 600;
+}
+
+/* WP version states */
+.smd-wp-current {
+	color: #00a32a;
+	font-weight: 600;
+}
+
+.smd-wp-acceptable {
+	color: #4ab866;
+	font-weight: 600;
+}
+
 .smd-update-available {
 	color: #dba617;
 	font-weight: 600;
@@ -87,7 +106,33 @@
 	width: 80px;
 }
 
-/* Sites list table: network column */
+/* Sites list table: column widths */
+.column-wp_version {
+	width: 130px;
+}
+
+.column-php_version {
+	width: 80px;
+}
+
+.column-pending_updates {
+	width: 120px;
+}
+
+.column-last_seen,
+.column-last_updated {
+	width: 140px;
+}
+
 .column-network {
 	width: 150px;
+}
+
+/* Report tables: column widths */
+.column-sites {
+	width: 60px;
+}
+
+.column-slug {
+	width: 200px;
 }
