@@ -1,6 +1,6 @@
 {
-    "name": "apermo/site-monitor-dashboard",
-    "description": "A WordPress site-monitor-dashboard plugin.",
+    "name": "apermo/site-bookkeeper-dashboard",
+    "description": "A WordPress site-bookkeeper-dashboard plugin.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "authors": [
@@ -24,12 +24,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Apermo\\SiteMonitorDashboard\\": "src/"
+            "Apermo\\SiteBookkeeperDashboard\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Apermo\\SiteMonitorDashboard\\Tests\\": "tests/"
+            "Apermo\\SiteBookkeeperDashboard\\Tests\\": "tests/"
         }
     },
     "scripts": {

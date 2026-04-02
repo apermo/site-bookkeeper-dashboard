@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard\CLI;
+namespace Apermo\SiteBookkeeperDashboard\CLI;
 
-use Apermo\SiteMonitorDashboard\ApiClient;
+use Apermo\SiteBookkeeperDashboard\ApiClient;
 use WP_CLI;
 // phpcs:ignore Universal.UseStatements.DisallowUseFunction.FoundWithoutAlias -- WP-CLI utility function.
 use function WP_CLI\Utils\format_items;
 
 /**
- * WP-CLI commands for the Site Monitor Dashboard.
+ * WP-CLI commands for the Site Bookkeeper Dashboard.
  *
  * Provides CLI access to monitored site data from the
  * central hub: sites overview, site detail, cross-site
@@ -19,16 +19,16 @@ use function WP_CLI\Utils\format_items;
  * ## EXAMPLES
  *
  *     # List all monitored sites
- *     wp site-monitor sites
+ *     wp site-bookkeeper sites
  *
  *     # Show detail for a single site
- *     wp site-monitor site <id>
+ *     wp site-bookkeeper site <id>
  *
  *     # Cross-site plugin report
- *     wp site-monitor plugins --outdated
+ *     wp site-bookkeeper plugins --outdated
  *
  *     # Test hub connection
- *     wp site-monitor test
+ *     wp site-bookkeeper test
  */
 class Commands {
 
@@ -112,8 +112,8 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-monitor sites
-	 *     wp site-monitor sites --format=json
+	 *     wp site-bookkeeper sites
+	 *     wp site-bookkeeper sites --format=json
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -147,7 +147,7 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-monitor site abc-123-def
+	 *     wp site-bookkeeper site abc-123-def
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -195,8 +195,8 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-monitor plugins
-	 *     wp site-monitor plugins --outdated
+	 *     wp site-bookkeeper plugins
+	 *     wp site-bookkeeper plugins --outdated
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -247,8 +247,8 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-monitor themes
-	 *     wp site-monitor themes --outdated
+	 *     wp site-bookkeeper themes
+	 *     wp site-bookkeeper themes --outdated
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -283,7 +283,7 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-monitor test
+	 *     wp site-bookkeeper test
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.

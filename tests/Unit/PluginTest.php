@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard\Tests\Unit;
+namespace Apermo\SiteBookkeeperDashboard\Tests\Unit;
 
-use Apermo\SiteMonitorDashboard\Plugin;
+use Apermo\SiteBookkeeperDashboard\Plugin;
 use Brain\Monkey;
 use Brain\Monkey\Functions;
 use PHPUnit\Framework\TestCase;

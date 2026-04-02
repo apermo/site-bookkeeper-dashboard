@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard;
+namespace Apermo\SiteBookkeeperDashboard;
 
 /**
  * Sites overview list table.
@@ -52,7 +52,7 @@ class SitesListTable {
 	public function column_label( array $item ): string {
 		$detail_url = admin_url(
 			\sprintf(
-				'admin.php?page=site_monitor_dashboard_detail&site_id=%s',
+				'admin.php?page=site_bookkeeper_dashboard_detail&site_id=%s',
 				$item['id'] ?? '',
 			),
 		);

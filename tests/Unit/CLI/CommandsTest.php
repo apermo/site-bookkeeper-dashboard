@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard\Tests\Unit\CLI;
+namespace Apermo\SiteBookkeeperDashboard\Tests\Unit\CLI;
 
-use Apermo\SiteMonitorDashboard\ApiClient;
-use Apermo\SiteMonitorDashboard\CLI\Commands;
+use Apermo\SiteBookkeeperDashboard\ApiClient;
+use Apermo\SiteBookkeeperDashboard\CLI\Commands;
 use Brain\Monkey;
 use Mockery;
 use PHPUnit\Framework\TestCase;

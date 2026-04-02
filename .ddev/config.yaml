@@ -1,4 +1,4 @@
-name: site-monitor-dashboard
+name: site-bookkeeper-dashboard
 type: php
 docroot: ""
 php_version: "8.4"

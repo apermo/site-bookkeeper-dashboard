@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard\Tests\Unit;
+namespace Apermo\SiteBookkeeperDashboard\Tests\Unit;
 
-use Apermo\SiteMonitorDashboard\Settings;
+use Apermo\SiteBookkeeperDashboard\Settings;
 use Brain\Monkey;
 use Brain\Monkey\Functions;
 use Mockery;
@@ -58,9 +58,9 @@ class SettingsTest extends TestCase {
 	 * @return void
 	 */
 	public function test_get_hub_url_returns_constant_when_defined(): void {
-		if ( ! \defined( 'SITE_MONITOR_HUB_URL' ) ) {
+		if ( ! \defined( 'SITE_BOOKKEEPER_HUB_URL' ) ) {
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- User-facing constant.
-			\define( 'SITE_MONITOR_HUB_URL', 'https://monitor.example.tld' );
+			\define( 'SITE_BOOKKEEPER_HUB_URL', 'https://monitor.example.tld' );
 		}
 
 		$this->assertSame( 'https://monitor.example.tld', Settings::get_hub_url() );
@@ -72,9 +72,9 @@ class SettingsTest extends TestCase {
 	 * @return void
 	 */
 	public function test_get_token_returns_constant_when_defined(): void {
-		if ( ! \defined( 'SITE_MONITOR_CLIENT_TOKEN' ) ) {
+		if ( ! \defined( 'SITE_BOOKKEEPER_CLIENT_TOKEN' ) ) {
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- User-facing constant.
-			\define( 'SITE_MONITOR_CLIENT_TOKEN', 'test-token-123' );
+			\define( 'SITE_BOOKKEEPER_CLIENT_TOKEN', 'test-token-123' );
 		}
 
 		$this->assertSame( 'test-token-123', Settings::get_token() );
@@ -88,7 +88,7 @@ class SettingsTest extends TestCase {
 	public function test_get_hub_url_falls_back_to_option(): void {
 		Functions\expect( 'get_option' )
 			->once()
-			->with( 'site_monitor_dashboard_hub_url', '' )
+			->with( 'site_bookkeeper_dashboard_hub_url', '' )
 			->andReturn( 'https://hub.example.tld' );
 
 		// Constants are already defined from previous tests,
@@ -106,7 +106,7 @@ class SettingsTest extends TestCase {
 	public function test_get_token_falls_back_to_option(): void {
 		Functions\expect( 'get_option' )
 			->once()
-			->with( 'site_monitor_dashboard_token', '' )
+			->with( 'site_bookkeeper_dashboard_token', '' )
 			->andReturn( 'option-token-456' );
 
 		$result = Settings::get_token_option();
@@ -141,46 +141,46 @@ class SettingsTest extends TestCase {
 		Functions\expect( 'register_setting' )
 			->once()
 			->with(
-				'site_monitor_dashboard',
-				'site_monitor_dashboard_hub_url',
+				'site_bookkeeper_dashboard',
+				'site_bookkeeper_dashboard_hub_url',
 				Mockery::type( 'array' ),
 			);
 
 		Functions\expect( 'register_setting' )
 			->once()
 			->with(
-				'site_monitor_dashboard',
-				'site_monitor_dashboard_token',
+				'site_bookkeeper_dashboard',
+				'site_bookkeeper_dashboard_token',
 				Mockery::type( 'array' ),
 			);
 
 		Functions\expect( 'add_settings_section' )
 			->once()
 			->with(
-				'site_monitor_dashboard_main',
+				'site_bookkeeper_dashboard_main',
 				Mockery::type( 'string' ),
 				Mockery::type( 'array' ),
-				'site_monitor_dashboard',
+				'site_bookkeeper_dashboard',
 			);
 
 		Functions\expect( 'add_settings_field' )
 			->once()
 			->with(
-				'site_monitor_dashboard_hub_url',
+				'site_bookkeeper_dashboard_hub_url',
 				Mockery::type( 'string' ),
 				Mockery::type( 'array' ),
-				'site_monitor_dashboard',
-				'site_monitor_dashboard_main',
+				'site_bookkeeper_dashboard',
+				'site_bookkeeper_dashboard_main',
 			);
 
 		Functions\expect( 'add_settings_field' )
 			->once()
 			->with(
-				'site_monitor_dashboard_token',
+				'site_bookkeeper_dashboard_token',
 				Mockery::type( 'string' ),
 				Mockery::type( 'array' ),
-				'site_monitor_dashboard',
-				'site_monitor_dashboard_main',
+				'site_bookkeeper_dashboard',
+				'site_bookkeeper_dashboard_main',
 			);
 
 		Settings::register_settings();
@@ -195,10 +195,10 @@ class SettingsTest extends TestCase {
 		Functions\expect( 'add_options_page' )
 			->once()
 			->with(
-				'Site Monitor Dashboard',
-				'Site Monitor',
+				'Site Bookkeeper Dashboard',
+				'Site Bookkeeper',
 				'manage_options',
-				'site_monitor_dashboard',
+				'site_bookkeeper_dashboard',
 				[ Settings::class, 'render_page' ],
 			);
 

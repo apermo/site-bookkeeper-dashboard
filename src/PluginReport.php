@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard;
+namespace Apermo\SiteBookkeeperDashboard;
 
 /**
  * Cross-site plugin report.

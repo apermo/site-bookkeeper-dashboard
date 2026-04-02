@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard;
+namespace Apermo\SiteBookkeeperDashboard;
 
 /**
  * Admin page controller.
@@ -29,39 +29,39 @@ class Admin {
 	 */
 	public static function register_pages(): void {
 		add_menu_page(
-			'Site Monitor',
-			'Site Monitor',
+			'Site Bookkeeper',
+			'Site Bookkeeper',
 			'manage_options',
-			'site_monitor_dashboard',
+			'site_bookkeeper_dashboard',
 			[ self::class, 'render_sites_page' ],
 			'dashicons-admin-site-alt3',
 			100,
 		);
 
 		add_submenu_page(
-			'site_monitor_dashboard',
+			'site_bookkeeper_dashboard',
 			'Site Detail',
 			'',
 			'manage_options',
-			'site_monitor_dashboard_detail',
+			'site_bookkeeper_dashboard_detail',
 			[ self::class, 'render_detail_page' ],
 		);
 
 		add_submenu_page(
-			'site_monitor_dashboard',
+			'site_bookkeeper_dashboard',
 			'Plugin Report',
 			'Plugins',
 			'manage_options',
-			'site_monitor_dashboard_plugins',
+			'site_bookkeeper_dashboard_plugins',
 			[ self::class, 'render_plugin_report' ],
 		);
 
 		add_submenu_page(
-			'site_monitor_dashboard',
+			'site_bookkeeper_dashboard',
 			'Theme Report',
 			'Themes',
 			'manage_options',
-			'site_monitor_dashboard_themes',
+			'site_bookkeeper_dashboard_themes',
 			[ self::class, 'render_theme_report' ],
 		);
 	}
@@ -74,12 +74,12 @@ class Admin {
 	 * @return void
 	 */
 	public static function enqueue_styles( string $hook_suffix ): void {
-		if ( ! \str_contains( $hook_suffix, 'site_monitor_dashboard' ) ) {
+		if ( ! \str_contains( $hook_suffix, 'site_bookkeeper_dashboard' ) ) {
 			return;
 		}
 
 		wp_enqueue_style(
-			'site-monitor-dashboard',
+			'site-bookkeeper-dashboard',
 			plugins_url( 'assets/css/admin.css', Plugin::file() ),
 			[],
 			Plugin::VERSION,
@@ -106,7 +106,7 @@ class Admin {
 		$sites = $table->sort_items( $sites, $orderby, $order );
 
 		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Site Monitor Dashboard', 'site-monitor-dashboard' ) . '</h1>';
+		echo '<h1>' . esc_html__( 'Site Bookkeeper Dashboard', 'site-bookkeeper-dashboard' ) . '</h1>';
 
 		if ( isset( $data['error'] ) ) {
 			self::render_error( $data );
@@ -127,7 +127,7 @@ class Admin {
 		$site_id = isset( $_GET['site_id'] ) ? sanitize_text_field( wp_unslash( $_GET['site_id'] ) ) : '';
 
 		if ( $site_id === '' ) {
-			echo '<div class="wrap"><p>' . esc_html__( 'No site specified.', 'site-monitor-dashboard' ) . '</p></div>';
+			echo '<div class="wrap"><p>' . esc_html__( 'No site specified.', 'site-bookkeeper-dashboard' ) . '</p></div>';
 			return;
 		}
 
@@ -163,12 +163,12 @@ class Admin {
 		$plugins = $data['plugins'] ?? [];
 
 		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Cross-Site Plugin Report', 'site-monitor-dashboard' ) . '</h1>';
+		echo '<h1>' . esc_html__( 'Cross-Site Plugin Report', 'site-bookkeeper-dashboard' ) . '</h1>';
 
 		if ( isset( $data['error'] ) ) {
 			self::render_error( $data );
 		} else {
-			self::render_report_filter( 'site_monitor_dashboard_plugins', $outdated );
+			self::render_report_filter( 'site_bookkeeper_dashboard_plugins', $outdated );
 			self::render_report_table( $report, $plugins );
 		}
 
@@ -192,12 +192,12 @@ class Admin {
 		$themes = $data['themes'] ?? [];
 
 		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Cross-Site Theme Report', 'site-monitor-dashboard' ) . '</h1>';
+		echo '<h1>' . esc_html__( 'Cross-Site Theme Report', 'site-bookkeeper-dashboard' ) . '</h1>';
 
 		if ( isset( $data['error'] ) ) {
 			self::render_error( $data );
 		} else {
-			self::render_report_filter( 'site_monitor_dashboard_themes', $outdated );
+			self::render_report_filter( 'site_bookkeeper_dashboard_themes', $outdated );
 			self::render_report_table( $report, $themes );
 		}
 
@@ -242,7 +242,7 @@ class Admin {
 		echo '<tbody>';
 		if ( $sites === [] ) {
 			echo '<tr><td colspan="' . \count( $columns ) . '">';
-			esc_html_e( 'No sites found.', 'site-monitor-dashboard' );
+			esc_html_e( 'No sites found.', 'site-bookkeeper-dashboard' );
 			echo '</td></tr>';
 		}
 
@@ -299,15 +299,15 @@ class Admin {
 			\printf(
 				'<a href="%s">%s</a> | <strong>%s</strong>',
 				esc_url( $url ),
-				esc_html__( 'All', 'site-monitor-dashboard' ),
-				esc_html__( 'Outdated only', 'site-monitor-dashboard' ),
+				esc_html__( 'All', 'site-bookkeeper-dashboard' ),
+				esc_html__( 'Outdated only', 'site-bookkeeper-dashboard' ),
 			);
 		} else {
 			\printf(
 				'<strong>%s</strong> | <a href="%s">%s</a>',
-				esc_html__( 'All', 'site-monitor-dashboard' ),
+				esc_html__( 'All', 'site-bookkeeper-dashboard' ),
 				esc_url( $url . '&outdated=1' ),
-				esc_html__( 'Outdated only', 'site-monitor-dashboard' ),
+				esc_html__( 'Outdated only', 'site-bookkeeper-dashboard' ),
 			);
 		}
 		echo '</p>';
@@ -336,7 +336,7 @@ class Admin {
 		echo '<tbody>';
 		if ( $items === [] ) {
 			echo '<tr><td colspan="' . \count( $columns ) . '">';
-			esc_html_e( 'No items found.', 'site-monitor-dashboard' );
+			esc_html_e( 'No items found.', 'site-bookkeeper-dashboard' );
 			echo '</td></tr>';
 		}
 

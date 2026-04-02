@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard;
+namespace Apermo\SiteBookkeeperDashboard;
 
 /**
- * HTTP client for the Site Monitor Hub API.
+ * HTTP client for the Site Bookkeeper Hub API.
  *
  * Handles authentication, transient caching (5 min TTL),
  * and error handling for all hub API endpoints.
@@ -24,7 +24,7 @@ class ApiClient {
 	 *
 	 * @var string
 	 */
-	private const CACHE_PREFIX = 'smd_api_';
+	private const CACHE_PREFIX = 'sbd_api_';
 
 	/**
 	 * Hub base URL.

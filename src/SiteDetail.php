@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard;
+namespace Apermo\SiteBookkeeperDashboard;
 
 /**
  * Site detail view renderer.
@@ -45,7 +45,7 @@ class SiteDetail {
 		];
 
 		echo '<div class="smd-detail-section">';
-		echo '<h2>' . esc_html__( 'Environment', 'site-monitor-dashboard' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Environment', 'site-bookkeeper-dashboard' ) . '</h2>';
 		echo '<table class="widefat fixed striped smd-kv-table">';
 
 		foreach ( $fields as $key => $label ) {
@@ -66,7 +66,7 @@ class SiteDetail {
 
 		if ( isset( $site['active_theme'] ) ) {
 			echo '<tr>';
-			echo '<th>' . esc_html__( 'Active Theme', 'site-monitor-dashboard' ) . '</th>';
+			echo '<th>' . esc_html__( 'Active Theme', 'site-bookkeeper-dashboard' ) . '</th>';
 			echo '<td>' . esc_html( (string) $site['active_theme'] ) . '</td>';
 			echo '</tr>';
 		}
@@ -88,14 +88,14 @@ class SiteDetail {
 		}
 
 		echo '<div class="smd-detail-section">';
-		echo '<h2>' . esc_html__( 'Plugins', 'site-monitor-dashboard' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Plugins', 'site-bookkeeper-dashboard' ) . '</h2>';
 		echo '<table class="widefat fixed striped">';
 		echo '<thead><tr>';
-		echo '<th>' . esc_html__( 'Plugin', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Version', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Update', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Active', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Last Updated', 'site-monitor-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Plugin', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Version', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Update', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Active', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Last Updated', 'site-bookkeeper-dashboard' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
 		foreach ( $plugins as $plugin ) {
@@ -134,14 +134,14 @@ class SiteDetail {
 		}
 
 		echo '<div class="smd-detail-section">';
-		echo '<h2>' . esc_html__( 'Themes', 'site-monitor-dashboard' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Themes', 'site-bookkeeper-dashboard' ) . '</h2>';
 		echo '<table class="widefat fixed striped">';
 		echo '<thead><tr>';
-		echo '<th>' . esc_html__( 'Theme', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Version', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Update', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Active', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Last Updated', 'site-monitor-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Theme', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Version', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Update', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Active', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Last Updated', 'site-bookkeeper-dashboard' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
 		foreach ( $themes as $theme ) {
@@ -182,7 +182,7 @@ class SiteDetail {
 		}
 
 		echo '<div class="smd-detail-section">';
-		echo '<h2>' . esc_html__( 'Custom Fields', 'site-monitor-dashboard' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Custom Fields', 'site-bookkeeper-dashboard' ) . '</h2>';
 		echo '<table class="widefat fixed striped smd-kv-table">';
 
 		foreach ( $fields as $field ) {
@@ -224,14 +224,14 @@ class SiteDetail {
 		}
 
 		echo '<div class="smd-detail-section">';
-		echo '<h2>' . esc_html__( 'Users', 'site-monitor-dashboard' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Users', 'site-bookkeeper-dashboard' ) . '</h2>';
 		echo '<table class="widefat fixed striped">';
 		echo '<thead><tr>';
-		echo '<th>' . esc_html__( 'Login', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Display Name', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Email', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Role', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Meta', 'site-monitor-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Login', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Display Name', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Email', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Role', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Meta', 'site-bookkeeper-dashboard' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
 		foreach ( $users as $user ) {
@@ -274,12 +274,12 @@ class SiteDetail {
 		}
 
 		echo '<div class="smd-detail-section">';
-		echo '<h2>' . esc_html__( 'Roles', 'site-monitor-dashboard' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Roles', 'site-bookkeeper-dashboard' ) . '</h2>';
 		echo '<table class="widefat fixed striped">';
 		echo '<thead><tr>';
-		echo '<th>' . esc_html__( 'Role', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Type', 'site-monitor-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Capabilities', 'site-monitor-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Role', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Type', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th>' . esc_html__( 'Capabilities', 'site-bookkeeper-dashboard' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
 		foreach ( $roles as $role ) {

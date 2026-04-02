@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard\Tests\Unit;
+namespace Apermo\SiteBookkeeperDashboard\Tests\Unit;
 
-use Apermo\SiteMonitorDashboard\ApiClient;
+use Apermo\SiteBookkeeperDashboard\ApiClient;
 use Brain\Monkey;
 use Brain\Monkey\Functions;
 use Mockery;
@@ -61,7 +61,7 @@ class ApiClientTest extends TestCase {
 
 		Functions\expect( 'get_transient' )
 			->once()
-			->with( 'smd_api_sites' )
+			->with( 'sbd_api_sites' )
 			->andReturn( $cached );
 
 		$client = $this->create_client();
@@ -78,12 +78,12 @@ class ApiClientTest extends TestCase {
 	public function test_get_sites_makes_request_when_no_cache(): void {
 		$body = '{"sites":[{"id":"uuid-1","site_url":"https://site.example.tld"}]}';
 
-		$this->stub_uncached_request( 'smd_api_sites', 'https://monitor.example.tld/sites', $body );
+		$this->stub_uncached_request( 'sbd_api_sites', 'https://monitor.example.tld/sites', $body );
 
 		Functions\expect( 'set_transient' )
 			->once()
 			->with(
-				'smd_api_sites',
+				'sbd_api_sites',
 				[
 					'sites' => [
 						[
@@ -338,7 +338,7 @@ class ApiClientTest extends TestCase {
 	public function test_clear_cache_deletes_transient(): void {
 		Functions\expect( 'delete_transient' )
 			->once()
-			->with( 'smd_api_sites' );
+			->with( 'sbd_api_sites' );
 
 		$client = $this->create_client();
 		$client->clear_cache( 'sites' );

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard;
+namespace Apermo\SiteBookkeeperDashboard;
 
 /**
- * Settings page for the Site Monitor Dashboard plugin.
+ * Settings page for the Site Bookkeeper Dashboard plugin.
  *
  * Manages hub URL and authentication token. Both settings can be
- * overridden via constants SITE_MONITOR_HUB_URL and
- * SITE_MONITOR_CLIENT_TOKEN.
+ * overridden via constants SITE_BOOKKEEPER_HUB_URL and
+ * SITE_BOOKKEEPER_CLIENT_TOKEN.
  */
 class Settings {
 
@@ -18,21 +18,21 @@ class Settings {
 	 *
 	 * @var string
 	 */
-	public const OPTION_GROUP = 'site_monitor_dashboard';
+	public const OPTION_GROUP = 'site_bookkeeper_dashboard';
 
 	/**
 	 * Option name for the hub URL.
 	 *
 	 * @var string
 	 */
-	public const OPTION_HUB_URL = 'site_monitor_dashboard_hub_url';
+	public const OPTION_HUB_URL = 'site_bookkeeper_dashboard_hub_url';
 
 	/**
 	 * Option name for the authentication token.
 	 *
 	 * @var string
 	 */
-	public const OPTION_TOKEN = 'site_monitor_dashboard_token';
+	public const OPTION_TOKEN = 'site_bookkeeper_dashboard_token';
 
 	/**
 	 * Register WordPress hooks.
@@ -51,8 +51,8 @@ class Settings {
 	 */
 	public static function add_menu_page(): void {
 		add_options_page(
-			'Site Monitor Dashboard',
-			'Site Monitor',
+			'Site Bookkeeper Dashboard',
+			'Site Bookkeeper',
 			'manage_options',
 			self::OPTION_GROUP,
 			[ self::class, 'render_page' ],
@@ -86,7 +86,7 @@ class Settings {
 		);
 
 		add_settings_section(
-			'site_monitor_dashboard_main',
+			'site_bookkeeper_dashboard_main',
 			'Connection Settings',
 			[ self::class, 'render_section' ],
 			self::OPTION_GROUP,
@@ -97,7 +97,7 @@ class Settings {
 			'Hub URL',
 			[ self::class, 'render_hub_url_field' ],
 			self::OPTION_GROUP,
-			'site_monitor_dashboard_main',
+			'site_bookkeeper_dashboard_main',
 		);
 
 		add_settings_field(
@@ -105,7 +105,7 @@ class Settings {
 			'Client Token',
 			[ self::class, 'render_token_field' ],
 			self::OPTION_GROUP,
-			'site_monitor_dashboard_main',
+			'site_bookkeeper_dashboard_main',
 		);
 	}
 
@@ -116,7 +116,7 @@ class Settings {
 	 */
 	public static function get_hub_url(): string {
 		if ( self::hub_url_is_configured_by_constant() ) {
-			return (string) \constant( 'SITE_MONITOR_HUB_URL' );
+			return (string) \constant( 'SITE_BOOKKEEPER_HUB_URL' );
 		}
 
 		return self::get_hub_url_option();
@@ -138,7 +138,7 @@ class Settings {
 	 */
 	public static function get_token(): string {
 		if ( self::token_is_configured_by_constant() ) {
-			return (string) \constant( 'SITE_MONITOR_CLIENT_TOKEN' );
+			return (string) \constant( 'SITE_BOOKKEEPER_CLIENT_TOKEN' );
 		}
 
 		return self::get_token_option();
@@ -159,8 +159,8 @@ class Settings {
 	 * @return bool
 	 */
 	public static function hub_url_is_configured_by_constant(): bool {
-		return \defined( 'SITE_MONITOR_HUB_URL' )
-			&& \constant( 'SITE_MONITOR_HUB_URL' ) !== '';
+		return \defined( 'SITE_BOOKKEEPER_HUB_URL' )
+			&& \constant( 'SITE_BOOKKEEPER_HUB_URL' ) !== '';
 	}
 
 	/**
@@ -169,8 +169,8 @@ class Settings {
 	 * @return bool
 	 */
 	public static function token_is_configured_by_constant(): bool {
-		return \defined( 'SITE_MONITOR_CLIENT_TOKEN' )
-			&& \constant( 'SITE_MONITOR_CLIENT_TOKEN' ) !== '';
+		return \defined( 'SITE_BOOKKEEPER_CLIENT_TOKEN' )
+			&& \constant( 'SITE_BOOKKEEPER_CLIENT_TOKEN' ) !== '';
 	}
 
 	/**
@@ -205,7 +205,7 @@ class Settings {
 	public static function render_page(): void {
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Site Monitor Dashboard Settings', 'site-monitor-dashboard' ); ?></h1>
+			<h1><?php esc_html_e( 'Site Bookkeeper Dashboard Settings', 'site-bookkeeper-dashboard' ); ?></h1>
 			<form method="post" action="options.php">
 				<?php
 				settings_fields( self::OPTION_GROUP );
@@ -225,8 +225,8 @@ class Settings {
 	public static function render_section(): void {
 		echo '<p>';
 		esc_html_e(
-			'Configure the connection to the Site Monitor Hub API.',
-			'site-monitor-dashboard',
+			'Configure the connection to the Site Bookkeeper Hub API.',
+			'site-bookkeeper-dashboard',
 		);
 		echo '</p>';
 	}
@@ -250,8 +250,8 @@ class Settings {
 		if ( $disabled ) {
 			echo '<p class="description">';
 			esc_html_e(
-				'This value is defined by the SITE_MONITOR_HUB_URL constant.',
-				'site-monitor-dashboard',
+				'This value is defined by the SITE_BOOKKEEPER_HUB_URL constant.',
+				'site-bookkeeper-dashboard',
 			);
 			echo '</p>';
 		}
@@ -276,8 +276,8 @@ class Settings {
 		if ( $disabled ) {
 			echo '<p class="description">';
 			esc_html_e(
-				'This value is defined by the SITE_MONITOR_CLIENT_TOKEN constant.',
-				'site-monitor-dashboard',
+				'This value is defined by the SITE_BOOKKEEPER_CLIENT_TOKEN constant.',
+				'site-bookkeeper-dashboard',
 			);
 			echo '</p>';
 		}

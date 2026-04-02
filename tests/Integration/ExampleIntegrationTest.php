@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard\Tests\Integration;
+namespace Apermo\SiteBookkeeperDashboard\Tests\Integration;
 
-use Apermo\SiteMonitorDashboard\Plugin;
+use Apermo\SiteBookkeeperDashboard\Plugin;
 use WP_UnitTestCase;
 
 /**

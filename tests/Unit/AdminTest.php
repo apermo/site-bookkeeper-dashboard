@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Apermo\SiteMonitorDashboard\Tests\Unit;
+namespace Apermo\SiteBookkeeperDashboard\Tests\Unit;
 
-use Apermo\SiteMonitorDashboard\Admin;
+use Apermo\SiteBookkeeperDashboard\Admin;
 use Brain\Monkey;
 use Brain\Monkey\Functions;
 use Mockery;
@@ -61,10 +61,10 @@ class AdminTest extends TestCase {
 		Functions\expect( 'add_menu_page' )
 			->once()
 			->with(
-				'Site Monitor',
-				'Site Monitor',
+				'Site Bookkeeper',
+				'Site Bookkeeper',
 				'manage_options',
-				'site_monitor_dashboard',
+				'site_bookkeeper_dashboard',
 				[ Admin::class, 'render_sites_page' ],
 				'dashicons-admin-site-alt3',
 				Mockery::type( 'int' ),
