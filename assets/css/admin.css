@@ -87,6 +87,11 @@
 	font-style: italic;
 }
 
+.smd-vuln-status {
+	color: #646970;
+	font-style: italic;
+}
+
 /* Detail page sections */
 .smd-detail-section {
 	margin-bottom: 20px;

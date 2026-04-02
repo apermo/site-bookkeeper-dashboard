@@ -167,6 +167,49 @@ class Admin {
 	}
 
 	/**
+	 * Render vulnerability provider status.
+	 *
+	 * @param ApiClient $client API client instance.
+	 *
+	 * @return void
+	 */
+	private static function render_vuln_status( ApiClient $client ): void {
+		$status = $client->get_vulnerability_status();
+
+		if ( isset( $status['error'] ) || ( $status['enabled'] ?? false ) !== true ) {
+			echo '<p class="smd-vuln-status">';
+			esc_html_e( 'Vulnerability scanning: not configured.', 'site-bookkeeper-dashboard' );
+			echo '</p>';
+			return;
+		}
+
+		$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+		$parts = [];
+
+		foreach ( $status['providers'] ?? [] as $provider ) {
+			$name = esc_html( (string) ( $provider['name'] ?? '' ) );
+			$last = $provider['last_sync'] ?? null;
+
+			if ( $last !== null ) {
+				$date = wp_date( $format, \strtotime( $last ) );
+				$parts[] = \sprintf( '<strong>%s</strong> (last sync: %s)', $name, esc_html( (string) $date ) );
+			} else {
+				$parts[] = \sprintf( '<strong>%s</strong> (never synced)', $name );
+			}
+		}
+
+		echo '<p class="smd-vuln-status">';
+		\printf(
+			'%s %s',
+			esc_html__( 'Vulnerability providers:', 'site-bookkeeper-dashboard' ),
+			// Each part is built with esc_html() internally.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			\implode( ', ', $parts ),
+		);
+		echo '</p>';
+	}
+
+	/**
 	 * Render the sites overview page.
 	 *
 	 * @return void
@@ -192,6 +235,7 @@ class Admin {
 			self::render_error( $data );
 		} else {
 			self::render_last_checked();
+			self::render_vuln_status( $client );
 			self::render_sites_table( $table, $sites );
 		}
 

@@ -118,6 +118,15 @@ class ApiClient {
 	}
 
 	/**
+	 * Fetch vulnerability provider status.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_vulnerability_status(): array {
+		return $this->request( 'vulnerability-status' );
+	}
+
+	/**
 	 * Fetch cross-site plugin data.
 	 *
 	 * @param array<string, string> $params Query parameters.
