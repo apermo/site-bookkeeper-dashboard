@@ -118,6 +118,17 @@ class ApiClient {
 	}
 
 	/**
+	 * Search users across all sites.
+	 *
+	 * @param string $search Search term.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function search_users( string $search ): array {
+		return $this->request( 'users', [ 'search' => $search ] );
+	}
+
+	/**
 	 * Fetch vulnerability provider status.
 	 *
 	 * @return array<string, mixed>
