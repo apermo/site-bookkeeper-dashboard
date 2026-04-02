@@ -149,7 +149,7 @@
 }
 
 /* Users table: auto-size columns instead of fixed equal widths */
-.users .wp-list-table.fixed {
+.wp-list-table.fixed.users {
 	table-layout: auto;
 }
 
