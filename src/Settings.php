@@ -54,7 +54,7 @@ class Settings {
 			'Site Bookkeeper Dashboard',
 			'Site Bookkeeper',
 			'manage_options',
-			self::OPTION_GROUP,
+			self::OPTION_GROUP . '_settings',
 			[ self::class, 'render_page' ],
 		);
 	}
@@ -228,7 +228,7 @@ class Settings {
 	 */
 	public static function render_page(): void {
 		$flush_url = wp_nonce_url(
-			admin_url( 'options-general.php?page=' . self::OPTION_GROUP . '&sbd_flush_slugs=1' ),
+			admin_url( 'options-general.php?page=' . self::OPTION_GROUP . '_settings&sbd_flush_slugs=1' ),
 			'sbd_flush_slugs',
 		);
 		$flushed = isset( $_GET['sbd_slugs_flushed'] ) && $_GET['sbd_slugs_flushed'] === '1'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
