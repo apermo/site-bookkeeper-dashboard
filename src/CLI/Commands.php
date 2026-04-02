@@ -19,22 +19,22 @@ use function WP_CLI\Utils\format_items;
  * ## EXAMPLES
  *
  *     # List all monitored sites
- *     wp site-bookkeeper sites
+ *     wp bookkeeper-dashboard sites
  *
  *     # Show detail for a single site
- *     wp site-bookkeeper site <id>
+ *     wp bookkeeper-dashboard site <id>
  *
  *     # Cross-site plugin report
- *     wp site-bookkeeper plugins --outdated
+ *     wp bookkeeper-dashboard plugins --outdated
  *
  *     # List all networks
- *     wp site-bookkeeper networks
+ *     wp bookkeeper-dashboard networks
  *
  *     # Show detail for a single network
- *     wp site-bookkeeper network <id>
+ *     wp bookkeeper-dashboard network <id>
  *
  *     # Test hub connection
- *     wp site-bookkeeper test
+ *     wp bookkeeper-dashboard test
  */
 class Commands {
 
@@ -142,8 +142,8 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-bookkeeper sites
-	 *     wp site-bookkeeper sites --format=json
+	 *     wp bookkeeper-dashboard sites
+	 *     wp bookkeeper-dashboard sites --format=json
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -177,7 +177,7 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-bookkeeper site abc-123-def
+	 *     wp bookkeeper-dashboard site abc-123-def
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -225,8 +225,8 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-bookkeeper plugins
-	 *     wp site-bookkeeper plugins --outdated
+	 *     wp bookkeeper-dashboard plugins
+	 *     wp bookkeeper-dashboard plugins --outdated
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -277,8 +277,8 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-bookkeeper themes
-	 *     wp site-bookkeeper themes --outdated
+	 *     wp bookkeeper-dashboard themes
+	 *     wp bookkeeper-dashboard themes --outdated
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -326,8 +326,8 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-bookkeeper networks
-	 *     wp site-bookkeeper networks --format=json
+	 *     wp bookkeeper-dashboard networks
+	 *     wp bookkeeper-dashboard networks --format=json
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -361,7 +361,7 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-bookkeeper network net-uuid-1
+	 *     wp bookkeeper-dashboard network net-uuid-1
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
@@ -392,7 +392,7 @@ class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp site-bookkeeper test
+	 *     wp bookkeeper-dashboard test
 	 *
 	 * @param array<int, string>    $args       Positional arguments.
 	 * @param array<string, string> $assoc_args Associative arguments.
