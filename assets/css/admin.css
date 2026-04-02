@@ -165,6 +165,21 @@
 	width: 62%;
 }
 
+@media screen and (max-width: 1150px) {
+	.wp-list-table.users .column-user_login,
+	.wp-list-table.users .column-display_name {
+		width: 8%;
+	}
+
+	.wp-list-table.users .column-email {
+		width: 20%;
+	}
+
+	.wp-list-table.users .column-sites {
+		width: 64%;
+	}
+}
+
 /* Report tables: column widths */
 .column-sites {
 	width: 60px;
