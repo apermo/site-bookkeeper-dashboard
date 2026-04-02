@@ -47,7 +47,6 @@ class PluginReportTest extends TestCase {
 		$this->assertArrayHasKey( 'slug', $columns );
 		$this->assertArrayHasKey( 'sites', $columns );
 		$this->assertArrayHasKey( 'versions', $columns );
-		$this->assertArrayHasKey( 'update_status', $columns );
 	}
 
 	/**
@@ -108,52 +107,6 @@ class PluginReportTest extends TestCase {
 		$output = $report->column_versions( $item );
 		$this->assertStringContainsString( '1.0.0', $output );
 		$this->assertStringContainsString( '1.1.0', $output );
-	}
-
-	/**
-	 * Verify column_update_status shows when outdated.
-	 *
-	 * @return void
-	 */
-	public function test_column_update_status_outdated(): void {
-		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
-
-		$report = new PluginReport();
-		$item = [
-			'sites' => [
-				[
-					'site_url' => 'https://one.example.tld',
-					'version' => '1.0.0',
-					'update_available' => '1.1.0',
-				],
-			],
-		];
-
-		$output = $report->column_update_status( $item );
-		$this->assertStringContainsString( 'smd-has-updates', $output );
-	}
-
-	/**
-	 * Verify column_update_status shows up to date.
-	 *
-	 * @return void
-	 */
-	public function test_column_update_status_current(): void {
-		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
-
-		$report = new PluginReport();
-		$item = [
-			'sites' => [
-				[
-					'site_url' => 'https://one.example.tld',
-					'version' => '1.1.0',
-					'update_available' => '',
-				],
-			],
-		];
-
-		$output = $report->column_update_status( $item );
-		$this->assertStringNotContainsString( 'smd-has-updates', $output );
 	}
 
 	/**

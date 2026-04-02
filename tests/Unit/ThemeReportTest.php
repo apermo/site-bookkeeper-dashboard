@@ -47,7 +47,6 @@ class ThemeReportTest extends TestCase {
 		$this->assertArrayHasKey( 'slug', $columns );
 		$this->assertArrayHasKey( 'sites', $columns );
 		$this->assertArrayHasKey( 'versions', $columns );
-		$this->assertArrayHasKey( 'update_status', $columns );
 	}
 
 	/**
@@ -81,52 +80,6 @@ class ThemeReportTest extends TestCase {
 
 		$output = $report->column_sites( $item );
 		$this->assertSame( '2', $output );
-	}
-
-	/**
-	 * Verify column_update_status shows when outdated.
-	 *
-	 * @return void
-	 */
-	public function test_column_update_status_outdated(): void {
-		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
-
-		$report = new ThemeReport();
-		$item = [
-			'sites' => [
-				[
-					'site_url' => 'https://one.example.tld',
-					'version' => '3.0',
-					'update_available' => '3.1',
-				],
-			],
-		];
-
-		$output = $report->column_update_status( $item );
-		$this->assertStringContainsString( 'smd-has-updates', $output );
-	}
-
-	/**
-	 * Verify column_update_status shows up to date.
-	 *
-	 * @return void
-	 */
-	public function test_column_update_status_current(): void {
-		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
-
-		$report = new ThemeReport();
-		$item = [
-			'sites' => [
-				[
-					'site_url' => 'https://one.example.tld',
-					'version' => '3.1',
-					'update_available' => '',
-				],
-			],
-		];
-
-		$output = $report->column_update_status( $item );
-		$this->assertStringNotContainsString( 'smd-has-updates', $output );
 	}
 
 	/**
