@@ -39,6 +39,25 @@ class PluginReport {
 	}
 
 	/**
+	 * Render the name column with a link to WordPress.org if available.
+	 *
+	 * @param array<string, mixed> $item Plugin data row.
+	 *
+	 * @return string
+	 */
+	public function column_name( array $item ): string {
+		$name = esc_html( (string) ( $item['name'] ?? '' ) );
+		$slug = (string) ( $item['slug'] ?? '' );
+		$link = SlugResolver::plugin_url( $slug );
+
+		if ( $link !== null ) {
+			return \sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $link ), $name );
+		}
+
+		return $name;
+	}
+
+	/**
 	 * Render the sites column showing site count.
 	 *
 	 * @param array<string, mixed> $item Plugin data row.

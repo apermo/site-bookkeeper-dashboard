@@ -21,6 +21,7 @@ class Admin {
 		add_action( 'admin_menu', [ self::class, 'register_pages' ] );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_styles' ] );
 		add_action( 'admin_init', [ self::class, 'handle_cache_flush' ] );
+		add_action( 'admin_init', [ self::class, 'handle_slug_cache_flush' ] );
 	}
 
 	/**
@@ -125,6 +126,28 @@ class Admin {
 		ApiClient::flush_all_caches();
 
 		$redirect = remove_query_arg( [ 'sbd_flush', '_wpnonce' ] );
+		wp_safe_redirect( $redirect );
+		exit();
+	}
+
+	/**
+	 * Handle the slug cache flush action.
+	 *
+	 * @return void
+	 */
+	public static function handle_slug_cache_flush(): void {
+		if ( ! isset( $_GET['sbd_flush_slugs'] ) || $_GET['sbd_flush_slugs'] !== '1' ) {
+			return;
+		}
+
+		$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'sbd_flush_slugs' ) ) {
+			return;
+		}
+
+		SlugResolver::flush();
+
+		$redirect = remove_query_arg( [ 'sbd_flush_slugs', '_wpnonce' ] );
 		wp_safe_redirect( $redirect );
 		exit();
 	}
@@ -548,6 +571,10 @@ class Admin {
 	 */
 	private static function render_report_filter( string $page_slug, bool $active ): void {
 		$url = admin_url( 'admin.php?page=' . $page_slug );
+		$flush_slug_url = wp_nonce_url(
+			add_query_arg( 'sbd_flush_slugs', '1' ),
+			'sbd_flush_slugs',
+		);
 
 		echo '<p>';
 		if ( $active ) {
@@ -565,6 +592,11 @@ class Admin {
 				esc_html__( 'Outdated only', 'site-bookkeeper-dashboard' ),
 			);
 		}
+		\printf(
+			' | <a href="%s" class="smd-last-checked">%s</a>',
+			esc_url( $flush_slug_url ),
+			esc_html__( 'Reset link cache', 'site-bookkeeper-dashboard' ),
+		);
 		echo '</p>';
 	}
 
@@ -624,6 +656,7 @@ class Admin {
 		string $column_name,
 	): string {
 		return match ( $column_name ) {
+			'name'     => $report->column_name( $item ),
 			'sites'    => $report->column_sites( $item ),
 			'versions' => $report->column_versions( $item ),
 			default    => $report->column_default( $item, $column_name ),
