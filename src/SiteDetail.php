@@ -236,7 +236,7 @@ class SiteDetail {
 
 		foreach ( $users as $user ) {
 			echo '<tr>';
-			echo '<td>' . esc_html( (string) ( $user['login'] ?? '' ) ) . '</td>';
+			echo '<td>' . esc_html( (string) ( $user['user_login'] ?? '' ) ) . '</td>';
 			echo '<td>' . esc_html( (string) ( $user['display_name'] ?? '' ) ) . '</td>';
 			echo '<td>' . esc_html( (string) ( $user['email'] ?? '' ) ) . '</td>';
 			echo '<td>' . esc_html( (string) ( $user['role'] ?? '' ) ) . '</td>';
