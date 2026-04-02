@@ -92,16 +92,20 @@ class PluginReport {
 			$by_version[ $version ][] = $label;
 		}
 
-		$parts = [];
-		foreach ( $by_version as $version => $labels ) {
-			$parts[] = \sprintf(
-				'<strong>%s</strong>: %s',
-				esc_html( $version ),
-				esc_html( \implode( ', ', $labels ) ),
-			);
+		if ( \count( $by_version ) === 1 ) {
+			return esc_html( \array_key_first( $by_version ) );
 		}
 
-		return \implode( '<br>', $parts );
+		$out = '<ul style="margin:0">';
+		foreach ( $by_version as $version => $labels ) {
+			$out .= '<li>' . esc_html( $version ) . '<ul>';
+			foreach ( $labels as $label ) {
+				$out .= '<li>' . esc_html( $label ) . '</li>';
+			}
+			$out .= '</ul></li>';
+		}
+
+		return $out . '</ul>';
 	}
 
 	/**
