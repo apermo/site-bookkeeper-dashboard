@@ -31,6 +31,24 @@ abstract class ApiListTable extends WP_List_Table {
 	protected int $per_page = 20;
 
 	/**
+	 * Check if any string value in an item contains the search needle.
+	 *
+	 * @param array<string, mixed> $item   Row data.
+	 * @param string               $needle Lowercase search term.
+	 *
+	 * @return bool
+	 */
+	private static function item_matches_search( array $item, string $needle ): bool {
+		foreach ( $item as $value ) {
+			if ( \is_string( $value ) && \str_contains( \mb_strtolower( $value ), $needle ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Fetch data from the hub API.
 	 *
 	 * @return array<int, array<string, mixed>> Items array or error data.
@@ -76,6 +94,7 @@ abstract class ApiListTable extends WP_List_Table {
 			return;
 		}
 
+		$items = $this->search_items( $items );
 		$items = $this->sort_fetched_items( $items );
 		$total = \count( $items );
 
@@ -142,6 +161,7 @@ abstract class ApiListTable extends WP_List_Table {
 			echo '<form method="get">';
 			\printf( '<input type="hidden" name="page" value="%s" />', esc_attr( $form_page ) );
 			$this->render_hidden_filters();
+			$this->search_box( __( 'Search', 'site-bookkeeper-dashboard' ), 'sbd_search' );
 		}
 
 		parent::display();
@@ -223,6 +243,39 @@ abstract class ApiListTable extends WP_List_Table {
 				esc_html__( 'Check now.', 'site-bookkeeper-dashboard' ),
 			);
 		}
+	}
+
+	/**
+	 * Sort items by the requested column.
+	 *
+	 * @param array<int, array<string, mixed>> $items Items to sort.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	/**
+	 * Filter items by the search term from the search box.
+	 *
+	 * Matches any string value in the item against the search term.
+	 *
+	 * @param array<int, array<string, mixed>> $items Items to filter.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function search_items( array $items ): array {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only search param.
+		$search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+		if ( $search === '' ) {
+			return $items;
+		}
+
+		$needle = \mb_strtolower( $search );
+
+		return \array_values(
+			\array_filter(
+				$items,
+				static fn( array $item ): bool => self::item_matches_search( $item, $needle ),
+			),
+		);
 	}
 
 	/**

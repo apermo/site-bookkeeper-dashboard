@@ -118,14 +118,14 @@ class ApiClient {
 	}
 
 	/**
-	 * Search users across all sites.
+	 * Fetch users across all sites, optionally filtered by search.
 	 *
-	 * @param string $search Search term.
+	 * @param array<string, string> $params Query parameters.
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function search_users( string $search ): array {
-		return $this->request( 'users', [ 'search' => $search ] );
+	public function get_users( array $params = [] ): array {
+		return $this->request( 'users', $params );
 	}
 
 	/**

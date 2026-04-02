@@ -242,38 +242,17 @@ class Admin {
 	}
 
 	/**
-	 * Render the cross-site user search page.
+	 * Render the cross-site users page.
 	 *
 	 * @return void
 	 */
 	public static function render_user_search(): void {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only search param.
-		$search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+		$table = new UsersListTable();
+		$table->prepare_items();
 
 		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Cross-Site User Search', 'site-bookkeeper-dashboard' ) . '</h1>';
-
-		echo '<form method="get">';
-		echo '<input type="hidden" name="page" value="site_bookkeeper_dashboard_users" />';
-		\printf(
-			'<p><input type="search" name="s" value="%s" placeholder="%s" class="regular-text" /> ',
-			esc_attr( $search ),
-			esc_attr__( 'Search by login, email, or name…', 'site-bookkeeper-dashboard' ),
-		);
-		submit_button( __( 'Search', 'site-bookkeeper-dashboard' ), 'primary', '', false );
-		echo '</p></form>';
-
-		if ( $search !== '' ) {
-			$client = ApiClient::from_settings();
-			$data = $client->search_users( $search );
-
-			if ( isset( $data['error'] ) ) {
-				self::render_error( $data );
-			} else {
-				self::render_user_results( $data['users'] ?? [] );
-			}
-		}
-
+		echo '<h1>' . esc_html__( 'Users', 'site-bookkeeper-dashboard' ) . '</h1>';
+		$table->display();
 		echo '</div>';
 	}
 
@@ -290,77 +269,5 @@ class Admin {
 			esc_html( (string) ( $data['error'] ?? 'error' ) ),
 			esc_html( (string) ( $data['message'] ?? 'Unknown error.' ) ),
 		);
-	}
-
-	/**
-	 * Render user search results table.
-	 *
-	 * @param array<int, array<string, mixed>> $users Grouped user results.
-	 *
-	 * @return void
-	 */
-	private static function render_user_results( array $users ): void {
-		if ( $users === [] ) {
-			echo '<p>' . esc_html__( 'No users found.', 'site-bookkeeper-dashboard' ) . '</p>';
-			return;
-		}
-
-		// phpcs:ignore Apermo.DataStructures.ArrayComplexity.TooManyKeysError -- HTML table structure.
-		echo '<table class="wp-list-table widefat fixed striped">';
-		echo '<thead><tr>';
-		echo '<th>' . esc_html__( 'Login', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Display Name', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Email', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Sites', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '</tr></thead><tbody>';
-
-		foreach ( $users as $user ) {
-			echo '<tr>';
-			echo '<td>' . esc_html( (string) ( $user['user_login'] ?? '' ) ) . '</td>';
-			echo '<td>' . esc_html( (string) ( $user['display_name'] ?? '' ) ) . '</td>';
-			echo '<td>' . esc_html( (string) ( $user['email'] ?? '' ) ) . '</td>';
-			echo '<td>';
-			self::render_user_sites( $user['sites'] ?? [] );
-			echo '</td>';
-			echo '</tr>';
-		}
-
-		echo '</tbody></table>';
-	}
-
-	/**
-	 * Render the site list for a user search result.
-	 *
-	 * @param array<int, array<string, mixed>> $sites Sites where user exists.
-	 *
-	 * @return void
-	 */
-	private static function render_user_sites( array $sites ): void {
-		if ( $sites === [] ) {
-			echo '&mdash;';
-			return;
-		}
-
-		echo '<ul style="margin:0">';
-		foreach ( $sites as $site ) {
-			$label = (string) ( $site['label'] ?? $site['site_url'] ?? '' );
-			$role = (string) ( $site['role'] ?? '' );
-			$site_id = (string) ( $site['site_id'] ?? '' );
-
-			$detail_url = admin_url(
-				'admin.php?page=site_bookkeeper_dashboard_detail&site_id=' . $site_id,
-			);
-
-			\printf(
-				'<li><a href="%s">%s</a>',
-				esc_url( $detail_url ),
-				esc_html( $label ),
-			);
-			if ( $role !== '' ) {
-				echo ' <small>(' . esc_html( $role ) . ')</small>';
-			}
-			echo '</li>';
-		}
-		echo '</ul>';
 	}
 }
