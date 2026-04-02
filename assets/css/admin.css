@@ -165,20 +165,18 @@
 	width: 62%;
 }
 
-@media screen and (max-width: 1150px) {
+@media screen and (max-width: 1280px) {
 	.wp-list-table.users .column-user_login,
 	.wp-list-table.users .column-display_name {
-		width: 10%;
+		width: 8%;
 	}
 
 	.wp-list-table.users .column-email {
-		width: 15%;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		width: 20%;
 	}
 
 	.wp-list-table.users .column-sites {
-		width: 65%;
+		width: 64%;
 	}
 }
 
