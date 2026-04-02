@@ -85,7 +85,12 @@ class PluginReport {
 			}
 		}
 
-		\uksort( $by_version, 'version_compare' );
+		\uksort(
+			$by_version,
+			static function ( string $left, string $right ): int {
+				return \version_compare( $right, $left );
+			},
+		);
 
 		$out = '<ul class="smd-version-list">';
 		foreach ( $by_version as $version => $domains ) {
