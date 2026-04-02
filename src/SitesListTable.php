@@ -20,6 +20,13 @@ class SitesListTable extends ApiListTable {
 	private bool $has_networks = false;
 
 	/**
+	 * All items before filtering (for building filter dropdowns).
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $all_items = [];
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -49,7 +56,16 @@ class SitesListTable extends ApiListTable {
 		$sites = $data['sites'] ?? [];
 		$this->has_networks = $this->detect_networks( $sites );
 
-		return $sites;
+		// Add computed pending_updates count for sorting.
+		foreach ( $sites as &$site ) {
+			$site['pending_updates'] = ( (int) ( $site['pending_plugin_updates'] ?? 0 ) )
+				+ ( (int) ( $site['pending_theme_updates'] ?? 0 ) );
+		}
+		unset( $site );
+
+		$this->all_items = $sites;
+
+		return $this->apply_filters( $sites );
 	}
 
 	/**
@@ -88,8 +104,156 @@ class SitesListTable extends ApiListTable {
 			'environment_type' => [ 'environment_type', false ],
 			'wp_version'       => [ 'wp_version', false ],
 			'php_version'      => [ 'php_version', false ],
+			'pending_updates'  => [ 'pending_updates', false ],
 			'last_seen'        => [ 'last_seen', true ],
+			'last_updated'     => [ 'last_updated', false ],
 		];
+	}
+
+	/**
+	 * Render filter dropdowns above the table.
+	 *
+	 * @param string $which Top or bottom position.
+	 *
+	 * @return void
+	 */
+	protected function extra_tablenav( $which ): void { // phpcs:ignore SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint -- WP_List_Table override.
+		if ( $which !== 'top' ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only filter params.
+		$current_env = isset( $_GET['environment_type'] ) ? sanitize_text_field( wp_unslash( $_GET['environment_type'] ) ) : '';
+		$current_wp = isset( $_GET['wp_version'] ) ? sanitize_text_field( wp_unslash( $_GET['wp_version'] ) ) : '';
+		$current_updates = isset( $_GET['has_updates'] ) ? sanitize_text_field( wp_unslash( $_GET['has_updates'] ) ) : '';
+		// phpcs:enable
+
+		echo '<div class="alignleft actions">';
+		$this->render_env_filter( $current_env );
+		$this->render_wp_filter( $current_wp );
+		$this->render_updates_filter( $current_updates );
+		submit_button( __( 'Filter', 'site-bookkeeper-dashboard' ), '', 'filter_action', false );
+		echo '</div>';
+	}
+
+	/**
+	 * Apply active filters to the items array.
+	 *
+	 * @param array<int, array<string, mixed>> $items Site data rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function apply_filters( array $items ): array {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only filter params.
+		$env_filter = isset( $_GET['environment_type'] ) ? sanitize_text_field( wp_unslash( $_GET['environment_type'] ) ) : '';
+		$wp_filter = isset( $_GET['wp_version'] ) ? sanitize_text_field( wp_unslash( $_GET['wp_version'] ) ) : '';
+		$updates_filter = isset( $_GET['has_updates'] ) ? sanitize_text_field( wp_unslash( $_GET['has_updates'] ) ) : '';
+		// phpcs:enable
+
+		if ( $env_filter !== '' ) {
+			$items = \array_filter(
+				$items,
+				static fn( array $item ): bool => ( $item['environment_type'] ?? '' ) === $env_filter,
+			);
+		}
+
+		if ( $wp_filter !== '' ) {
+			$items = \array_filter(
+				$items,
+				static fn( array $item ): bool => ( $item['wp_version'] ?? '' ) === $wp_filter,
+			);
+		}
+
+		if ( $updates_filter === 'any' ) {
+			$items = \array_filter(
+				$items,
+				static fn( array $item ): bool => ( $item['pending_updates'] ?? 0 ) > 0,
+			);
+		} elseif ( $updates_filter === 'none' ) {
+			$items = \array_filter(
+				$items,
+				static fn( array $item ): bool => ( $item['pending_updates'] ?? 0 ) === 0,
+			);
+		}
+
+		return \array_values( $items );
+	}
+
+	/**
+	 * Render the environment type filter dropdown.
+	 *
+	 * @param string $current Currently selected value.
+	 *
+	 * @return void
+	 */
+	private function render_env_filter( string $current ): void {
+		$options = [ 'production', 'staging', 'development', 'local' ];
+
+		echo '<select name="environment_type">';
+		echo '<option value="">' . esc_html__( 'All environments', 'site-bookkeeper-dashboard' ) . '</option>';
+		foreach ( $options as $option ) {
+			\printf(
+				'<option value="%s" %s>%s</option>',
+				esc_attr( $option ),
+				selected( $current, $option, false ),
+				esc_html( \ucfirst( $option ) ),
+			);
+		}
+		echo '</select>';
+	}
+
+	/**
+	 * Render the WordPress version filter dropdown.
+	 *
+	 * @param string $current Currently selected value.
+	 *
+	 * @return void
+	 */
+	private function render_wp_filter( string $current ): void {
+		$versions = [];
+		foreach ( $this->all_items as $item ) {
+			$version = $item['wp_version'] ?? '';
+			if ( $version !== '' ) {
+				$versions[ $version ] = true;
+			}
+		}
+		\uksort( $versions, 'version_compare' );
+		$versions = \array_reverse( \array_keys( $versions ) );
+
+		echo '<select name="wp_version">';
+		echo '<option value="">' . esc_html__( 'All WP versions', 'site-bookkeeper-dashboard' ) . '</option>';
+		foreach ( $versions as $version ) {
+			\printf(
+				'<option value="%s" %s>%s</option>',
+				esc_attr( $version ),
+				selected( $current, $version, false ),
+				esc_html( $version ),
+			);
+		}
+		echo '</select>';
+	}
+
+	/**
+	 * Render the pending updates filter dropdown.
+	 *
+	 * @param string $current Currently selected value.
+	 *
+	 * @return void
+	 */
+	private function render_updates_filter( string $current ): void {
+		echo '<select name="has_updates">';
+		echo '<option value="">' . esc_html__( 'All update states', 'site-bookkeeper-dashboard' ) . '</option>';
+		\printf(
+			'<option value="any" %s>%s</option>',
+			selected( $current, 'any', false ),
+			esc_html__( 'Has updates', 'site-bookkeeper-dashboard' ),
+		);
+		\printf(
+			'<option value="none" %s>%s</option>',
+			selected( $current, 'none', false ),
+			esc_html__( 'Up to date', 'site-bookkeeper-dashboard' ),
+		);
+		echo '</select>';
 	}
 
 	/**
@@ -255,7 +419,10 @@ class SitesListTable extends ApiListTable {
 
 		$this->render_last_checked();
 		$this->render_vuln_status();
+		echo '<form method="get">';
+		echo '<input type="hidden" name="page" value="site_bookkeeper_dashboard" />';
 		parent::display();
+		echo '</form>';
 	}
 
 	/**
