@@ -73,7 +73,7 @@ class CategoryAdmin {
 	 * @return bool
 	 */
 	public static function check_permission(): bool {
-		return is_user_logged_in() && current_user_can( 'manage_options' );
+		return current_user_can( 'manage_options' );
 	}
 
 	/**
