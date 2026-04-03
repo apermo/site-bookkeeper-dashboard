@@ -22,6 +22,7 @@ class Admin {
 		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_styles' ] );
 		add_action( 'admin_init', [ self::class, 'handle_cache_flush' ] );
 		add_action( 'admin_init', [ self::class, 'handle_slug_cache_flush' ] );
+		add_action( 'admin_init', [ CategoryAdmin::class, 'handle_actions' ] );
 	}
 
 	/**

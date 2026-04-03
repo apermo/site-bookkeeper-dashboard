@@ -242,6 +242,7 @@ class Settings {
 				submit_button();
 				?>
 			</form>
+			<?php CategoryAdmin::render(); ?>
 			<hr>
 			<h2><?php esc_html_e( 'Cache', 'site-bookkeeper-dashboard' ); ?></h2>
 			<p>
