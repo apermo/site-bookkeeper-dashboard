@@ -42,6 +42,10 @@
 	font-size: 16px;
 }
 
+.sbd-cat-row {
+	transition: background-color 0.4s ease;
+}
+
 .sbd-cat-row.ui-sortable-helper {
 	background: #f6f7f7;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

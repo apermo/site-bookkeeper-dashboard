@@ -9,7 +9,7 @@
 	var nonce = sbdCategories.nonce;
 
 	/**
-	 * Show a brief status indicator on a row.
+	 * Show a brief status indicator on a row and highlight it.
 	 */
 	function showStatus( $row, text, type ) {
 		var $status = $row.find( '.sbd-cat-status' );
@@ -21,6 +21,23 @@
 			.css( 'opacity', 1 )
 			.delay( 1500 )
 			.animate( { opacity: 0 }, 400 );
+
+		// Flash row background.
+		var color = type === 'error' ? '#fcecec' : '#ecf7ed';
+		$row.css( 'background-color', color );
+		setTimeout( function () {
+			$row.css( 'background-color', '' );
+		}, 1500 );
+	}
+
+	/**
+	 * Flash multiple rows green after reorder.
+	 */
+	function flashRows( $rows ) {
+		$rows.css( 'background-color', '#ecf7ed' );
+		setTimeout( function () {
+			$rows.css( 'background-color', '' );
+		}, 1500 );
 	}
 
 	/**
@@ -96,7 +113,11 @@
 			}
 		} );
 
-		restRequest( 'POST', restUrl + '/reorder', { order: order } );
+		var $rows = $( '#sbd-categories-body .sbd-cat-row' );
+		restRequest( 'POST', restUrl + '/reorder', { order: order } )
+			.done( function () {
+				flashRows( $rows );
+			} );
 	}
 
 	/**
