@@ -128,8 +128,8 @@
 }
 
 .smd-version-list ul {
-	margin: 3px 0 0 1.2em;
-	padding: 2px 0 2px 12px;
+	margin: 3px 0 0 0.55em;
+	padding: 2px 0 2px 1em;
 	list-style: none;
 	border-left: 2px solid #dcdcde;
 }
