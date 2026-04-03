@@ -21,6 +21,32 @@
 	width: 100px;
 }
 
+/* Category admin: save status indicator */
+.sbd-cat-status {
+	display: inline-block;
+	margin-left: 8px;
+	font-weight: 600;
+}
+
+.sbd-cat-status.sbd-saved {
+	color: #00a32a;
+}
+
+.sbd-cat-status.sbd-error {
+	color: #d63638;
+}
+
+/* Category admin: drag handle */
+.sbd-drag-handle {
+	color: #a7aaad;
+	font-size: 16px;
+}
+
+.sbd-cat-row.ui-sortable-helper {
+	background: #f6f7f7;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Pending updates highlight */
 .smd-has-updates {
 	display: inline-block;

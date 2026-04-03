@@ -7,25 +7,51 @@ namespace Apermo\SiteBookkeeperDashboard;
 /**
  * Category management on the settings page.
  *
- * Handles CRUD operations for site categories via the hub API.
+ * Uses AJAX for CRUD operations with visual feedback.
  */
 class CategoryAdmin {
 
 	/**
-	 * Process category form submissions.
-	 *
-	 * Must be called early (admin_init) before output.
+	 * Register hooks.
 	 *
 	 * @return void
 	 */
-	public static function handle_actions(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
+	public static function init(): void {
+		// phpcs:disable Apermo.WordPress.NoAdminAjax.Found -- Proxy to external hub API, no WP data to expose via REST.
+		add_action( 'wp_ajax_sbd_category_save', [ self::class, 'ajax_save' ] );
+		add_action( 'wp_ajax_sbd_category_delete', [ self::class, 'ajax_delete' ] );
+		add_action( 'wp_ajax_sbd_category_reorder', [ self::class, 'ajax_reorder' ] );
+		// phpcs:enable
+	}
+
+	/**
+	 * Enqueue scripts on the settings page.
+	 *
+	 * @param string $hook_suffix Current admin page hook suffix.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_scripts( string $hook_suffix ): void {
+		if ( ! \str_contains( $hook_suffix, 'site_bookkeeper_dashboard_settings' ) ) {
 			return;
 		}
 
-		self::handle_create();
-		self::handle_update();
-		self::handle_delete();
+		wp_enqueue_script( 'jquery-ui-sortable' );
+		wp_enqueue_script(
+			'sbd-category-admin',
+			plugins_url( 'assets/js/category-admin.js', Plugin::file() ),
+			[ 'jquery', 'jquery-ui-sortable' ],
+			Plugin::VERSION,
+			true,
+		);
+		wp_localize_script(
+			'sbd-category-admin',
+			'sbdCategories',
+			[
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'sbd_category_admin' ),
+			],
+		);
 	}
 
 	/**
@@ -40,158 +66,136 @@ class CategoryAdmin {
 
 		echo '<hr>';
 		echo '<h2>' . esc_html__( 'Site Categories', 'site-bookkeeper-dashboard' ) . '</h2>';
-		echo '<p>' . esc_html__( 'Categories classify sites by importance. Each category defines how many hours before pending updates are considered overdue.', 'site-bookkeeper-dashboard' ) . '</p>';
+		echo '<p>' . esc_html__( 'Categories classify sites by importance. Each category defines how many hours before pending updates are considered overdue. Drag rows to reorder.', 'site-bookkeeper-dashboard' ) . '</p>';
 
-		if ( $categories !== [] ) {
-			self::render_table( $categories );
-		}
-
-		self::render_add_form();
-	}
-
-	/**
-	 * Render the categories table with inline edit forms.
-	 *
-	 * @param array<int, array<string, mixed>> $categories Category rows.
-	 *
-	 * @return void
-	 */
-	private static function render_table( array $categories ): void {
-		echo '<table class="wp-list-table widefat fixed striped">';
+		echo '<table class="wp-list-table widefat fixed striped" id="sbd-categories-table">';
 		echo '<thead><tr>';
+		echo '<th style="width:20px"></th>';
 		echo '<th>' . esc_html__( 'Name', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Slug', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Overdue (hours)', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Sort Order', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<th>' . esc_html__( 'Actions', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '</tr></thead><tbody>';
+		echo '<th style="width:120px">' . esc_html__( 'Overdue (hours)', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th style="width:80px">' . esc_html__( 'Actions', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '</tr></thead>';
+		echo '<tbody id="sbd-categories-body">';
 
 		foreach ( $categories as $category ) {
-			$cat_id = (string) $category['id'];
-			echo '<tr>';
-			echo '<form method="post">';
-			wp_nonce_field( 'sbd_update_category_' . $cat_id );
-			echo '<input type="hidden" name="sbd_update_category_id" value="' . esc_attr( $cat_id ) . '" />';
-
-			\printf( '<td><input type="text" name="sbd_cat_name" value="%s" class="regular-text" /></td>', esc_attr( (string) $category['name'] ) );
-			\printf( '<td><input type="text" name="sbd_cat_slug" value="%s" style="width:100px" /></td>', esc_attr( (string) $category['slug'] ) );
-			\printf( '<td><input type="number" name="sbd_cat_overdue" value="%d" min="1" style="width:80px" /></td>', (int) $category['overdue_hours'] );
-			\printf( '<td><input type="number" name="sbd_cat_order" value="%d" min="0" style="width:60px" /></td>', (int) $category['sort_order'] );
-			echo '<td>';
-			submit_button( __( 'Update', 'site-bookkeeper-dashboard' ), 'small', 'sbd_update_category', false );
-			echo ' ';
-			echo '</form>';
-
-			// Delete form (separate to avoid nesting).
-			echo '<form method="post" style="display:inline">';
-			wp_nonce_field( 'sbd_delete_category_' . $cat_id );
-			echo '<input type="hidden" name="sbd_delete_category_id" value="' . esc_attr( $cat_id ) . '" />';
-			submit_button( __( 'Delete', 'site-bookkeeper-dashboard' ), 'small delete', 'sbd_delete_category', false );
-			echo '</form>';
-			echo '</td>';
-			echo '</tr>';
+			self::render_row( $category );
 		}
 
 		echo '</tbody></table>';
+
+		echo '<p><button type="button" class="button" id="sbd-add-category">';
+		echo '+ ' . esc_html__( 'Add Category', 'site-bookkeeper-dashboard' );
+		echo '</button></p>';
 	}
 
 	/**
-	 * Render the add category form.
+	 * Render a single category row.
+	 *
+	 * @param array<string, mixed> $category Category data.
 	 *
 	 * @return void
 	 */
-	private static function render_add_form(): void {
-		echo '<h3>' . esc_html__( 'Add Category', 'site-bookkeeper-dashboard' ) . '</h3>';
-		echo '<form method="post">';
-		wp_nonce_field( 'sbd_create_category' );
-		echo '<table class="form-table"><tbody>';
-		echo '<tr><th>' . esc_html__( 'Name', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<td><input type="text" name="sbd_new_cat_name" class="regular-text" required /></td></tr>';
-		echo '<tr><th>' . esc_html__( 'Overdue (hours)', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<td><input type="number" name="sbd_new_cat_overdue" value="48" min="1" style="width:80px" /></td></tr>';
-		echo '<tr><th>' . esc_html__( 'Sort Order', 'site-bookkeeper-dashboard' ) . '</th>';
-		echo '<td><input type="number" name="sbd_new_cat_order" value="0" min="0" style="width:60px" /></td></tr>';
-		echo '</tbody></table>';
-		submit_button( __( 'Add Category', 'site-bookkeeper-dashboard' ) );
-		echo '</form>';
+	private static function render_row( array $category ): void {
+		$cat_id = esc_attr( (string) ( $category['id'] ?? '' ) );
+		$name = esc_attr( (string) ( $category['name'] ?? '' ) );
+		$overdue = (int) ( $category['overdue_hours'] ?? 48 );
+
+		// All values are pre-escaped via esc_attr() and (int) cast above.
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<tr class="sbd-cat-row" data-id="' . $cat_id . '">';
+		echo '<td class="sbd-drag-handle" style="cursor:move">&#9776;</td>';
+		\printf( '<td><input type="text" class="sbd-cat-name regular-text" value="%s" /></td>', $name );
+		\printf( '<td><input type="number" class="sbd-cat-overdue" value="%d" min="1" style="width:80px" /></td>', $overdue );
+		// phpcs:enable
+		echo '<td>';
+		echo '<button type="button" class="button-link sbd-cat-delete" style="color:#b32d2e">';
+		echo esc_html__( 'Delete', 'site-bookkeeper-dashboard' );
+		echo '</button>';
+		echo '<span class="sbd-cat-status"></span>';
+		echo '</td>';
+		echo '</tr>';
 	}
 
 	/**
-	 * Handle create category submission.
+	 * AJAX: Save (create or update) a category.
 	 *
 	 * @return void
 	 */
-	private static function handle_create(): void {
-		if ( ! isset( $_POST['sbd_new_cat_name'] ) ) {
-			return;
-		}
+	public static function ajax_save(): void {
+		check_ajax_referer( 'sbd_category_admin' );
 
-		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'sbd_create_category' ) ) {
-			return;
+		$cat_id = sanitize_text_field( wp_unslash( $_POST['id'] ?? '' ) );
+		$name = sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) );
+		$overdue = (int) sanitize_text_field( wp_unslash( $_POST['overdue_hours'] ?? '48' ) );
+
+		if ( $name === '' ) {
+			wp_send_json_error( 'Name is required.' );
 		}
 
 		$client = ApiClient::from_settings();
-		$client->create_category(
-			[
-				'name'         => sanitize_text_field( wp_unslash( $_POST['sbd_new_cat_name'] ) ),
-				'overdue_hours' => (int) sanitize_text_field( wp_unslash( $_POST['sbd_new_cat_overdue'] ?? '48' ) ),
-				'sort_order'   => (int) sanitize_text_field( wp_unslash( $_POST['sbd_new_cat_order'] ?? '0' ) ),
-			],
-		);
+
+		if ( $cat_id === '' ) {
+			$result = $client->create_category(
+				[
+					'name'         => $name,
+					'overdue_hours' => $overdue,
+				],
+			);
+		} else {
+			$result = $client->update_category(
+				$cat_id,
+				[
+					'name'         => $name,
+					'overdue_hours' => $overdue,
+				],
+			);
+		}
 
 		ApiClient::flush_all_caches();
+
+		wp_send_json_success( $result );
 	}
 
 	/**
-	 * Handle update category submission.
+	 * AJAX: Delete a category.
 	 *
 	 * @return void
 	 */
-	private static function handle_update(): void {
-		if ( ! isset( $_POST['sbd_update_category_id'] ) ) {
-			return;
-		}
+	public static function ajax_delete(): void {
+		check_ajax_referer( 'sbd_category_admin' );
 
-		$cat_id = sanitize_text_field( wp_unslash( $_POST['sbd_update_category_id'] ) );
-		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'sbd_update_category_' . $cat_id ) ) {
-			return;
-		}
-
-		$client = ApiClient::from_settings();
-		$client->update_category(
-			$cat_id,
-			[
-				'name'         => sanitize_text_field( wp_unslash( $_POST['sbd_cat_name'] ?? '' ) ),
-				'slug'         => sanitize_text_field( wp_unslash( $_POST['sbd_cat_slug'] ?? '' ) ),
-				'overdue_hours' => (int) sanitize_text_field( wp_unslash( $_POST['sbd_cat_overdue'] ?? '48' ) ),
-				'sort_order'   => (int) sanitize_text_field( wp_unslash( $_POST['sbd_cat_order'] ?? '0' ) ),
-			],
-		);
-
-		ApiClient::flush_all_caches();
-	}
-
-	/**
-	 * Handle delete category submission.
-	 *
-	 * @return void
-	 */
-	private static function handle_delete(): void {
-		if ( ! isset( $_POST['sbd_delete_category_id'] ) ) {
-			return;
-		}
-
-		$cat_id = sanitize_text_field( wp_unslash( $_POST['sbd_delete_category_id'] ) );
-		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'sbd_delete_category_' . $cat_id ) ) {
-			return;
+		$cat_id = sanitize_text_field( wp_unslash( $_POST['id'] ?? '' ) );
+		if ( $cat_id === '' ) {
+			wp_send_json_error( 'Missing ID.' );
 		}
 
 		$client = ApiClient::from_settings();
 		$client->delete_category( $cat_id );
 
 		ApiClient::flush_all_caches();
+
+		wp_send_json_success();
+	}
+
+	/**
+	 * AJAX: Reorder categories.
+	 *
+	 * @return void
+	 */
+	public static function ajax_reorder(): void {
+		check_ajax_referer( 'sbd_category_admin' );
+
+		$order = isset( $_POST['order'] ) ? \array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['order'] ) ) : [];
+
+		$client = ApiClient::from_settings();
+		foreach ( $order as $index => $cat_id ) {
+			if ( $cat_id !== '' ) {
+				$client->update_category( $cat_id, [ 'sort_order' => $index ] );
+			}
+		}
+
+		ApiClient::flush_all_caches();
+
+		wp_send_json_success();
 	}
 }

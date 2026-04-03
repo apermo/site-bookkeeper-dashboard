@@ -20,9 +20,10 @@ class Admin {
 	public static function init(): void {
 		add_action( 'admin_menu', [ self::class, 'register_pages' ] );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_styles' ] );
+		add_action( 'admin_enqueue_scripts', [ CategoryAdmin::class, 'enqueue_scripts' ] );
 		add_action( 'admin_init', [ self::class, 'handle_cache_flush' ] );
 		add_action( 'admin_init', [ self::class, 'handle_slug_cache_flush' ] );
-		add_action( 'admin_init', [ CategoryAdmin::class, 'handle_actions' ] );
+		CategoryAdmin::init();
 	}
 
 	/**
