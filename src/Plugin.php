@@ -67,6 +67,7 @@ class Plugin {
 	 */
 	public static function boot(): void {
 		Settings::init();
+		CategoryAdmin::init();
 
 		if ( is_admin() ) {
 			Admin::init();
