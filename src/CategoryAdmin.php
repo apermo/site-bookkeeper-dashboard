@@ -4,12 +4,22 @@ declare(strict_types=1);
 
 namespace Apermo\SiteBookkeeperDashboard;
 
+use WP_REST_Request;
+use WP_REST_Response;
+
 /**
  * Category management on the settings page.
  *
- * Uses AJAX for CRUD operations with visual feedback.
+ * Uses WP REST API for CRUD operations with visual feedback.
  */
 class CategoryAdmin {
+
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
+	private const REST_NAMESPACE = 'site-bookkeeper/v1';
 
 	/**
 	 * Register hooks.
@@ -17,11 +27,53 @@ class CategoryAdmin {
 	 * @return void
 	 */
 	public static function init(): void {
-		// phpcs:disable Apermo.WordPress.NoAdminAjax.Found -- Proxy to external hub API, no WP data to expose via REST.
-		add_action( 'wp_ajax_sbd_category_save', [ self::class, 'ajax_save' ] );
-		add_action( 'wp_ajax_sbd_category_delete', [ self::class, 'ajax_delete' ] );
-		add_action( 'wp_ajax_sbd_category_reorder', [ self::class, 'ajax_reorder' ] );
-		// phpcs:enable
+		add_action( 'rest_api_init', [ self::class, 'register_routes' ] );
+	}
+
+	/**
+	 * Register REST routes.
+	 *
+	 * @return void
+	 */
+	public static function register_routes(): void {
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/categories',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ self::class, 'rest_save' ],
+				'permission_callback' => [ self::class, 'check_permission' ],
+			],
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/categories/(?P<id>[a-f0-9-]+)',
+			[
+				'methods'             => 'DELETE',
+				'callback'            => [ self::class, 'rest_delete' ],
+				'permission_callback' => [ self::class, 'check_permission' ],
+			],
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/categories/reorder',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ self::class, 'rest_reorder' ],
+				'permission_callback' => [ self::class, 'check_permission' ],
+			],
+		);
+	}
+
+	/**
+	 * Permission check for REST endpoints.
+	 *
+	 * @return bool
+	 */
+	public static function check_permission(): bool {
+		return current_user_can( 'manage_options' );
 	}
 
 	/**
@@ -48,8 +100,8 @@ class CategoryAdmin {
 			'sbd-category-admin',
 			'sbdCategories',
 			[
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'sbd_category_admin' ),
+				'restUrl' => rest_url( self::REST_NAMESPACE . '/categories' ),
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
 			],
 		);
 	}
@@ -117,19 +169,19 @@ class CategoryAdmin {
 	}
 
 	/**
-	 * AJAX: Save (create or update) a category.
+	 * REST: Save (create or update) a category.
 	 *
-	 * @return void
+	 * @param WP_REST_Request $request REST request.
+	 *
+	 * @return WP_REST_Response
 	 */
-	public static function ajax_save(): void {
-		check_ajax_referer( 'sbd_category_admin' );
-
-		$cat_id = sanitize_text_field( wp_unslash( $_POST['id'] ?? '' ) );
-		$name = sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) );
-		$overdue = (int) sanitize_text_field( wp_unslash( $_POST['overdue_hours'] ?? '48' ) );
+	public static function rest_save( WP_REST_Request $request ): WP_REST_Response {
+		$cat_id = sanitize_text_field( (string) $request->get_param( 'id' ) );
+		$name = sanitize_text_field( (string) $request->get_param( 'name' ) );
+		$overdue = (int) $request->get_param( 'overdue_hours' );
 
 		if ( $name === '' ) {
-			wp_send_json_error( 'Name is required.' );
+			return new WP_REST_Response( [ 'error' => 'Name is required.' ], 400 );
 		}
 
 		$client = ApiClient::from_settings();
@@ -153,20 +205,21 @@ class CategoryAdmin {
 
 		ApiClient::flush_all_caches();
 
-		wp_send_json_success( $result );
+		return new WP_REST_Response( $result );
 	}
 
 	/**
-	 * AJAX: Delete a category.
+	 * REST: Delete a category.
 	 *
-	 * @return void
+	 * @param WP_REST_Request $request REST request.
+	 *
+	 * @return WP_REST_Response
 	 */
-	public static function ajax_delete(): void {
-		check_ajax_referer( 'sbd_category_admin' );
+	public static function rest_delete( WP_REST_Request $request ): WP_REST_Response {
+		$cat_id = sanitize_text_field( (string) $request->get_param( 'id' ) );
 
-		$cat_id = sanitize_text_field( wp_unslash( $_POST['id'] ?? '' ) );
 		if ( $cat_id === '' ) {
-			wp_send_json_error( 'Missing ID.' );
+			return new WP_REST_Response( [ 'error' => 'Missing ID.' ], 400 );
 		}
 
 		$client = ApiClient::from_settings();
@@ -174,28 +227,32 @@ class CategoryAdmin {
 
 		ApiClient::flush_all_caches();
 
-		wp_send_json_success();
+		return new WP_REST_Response( null, 204 );
 	}
 
 	/**
-	 * AJAX: Reorder categories.
+	 * REST: Reorder categories.
 	 *
-	 * @return void
+	 * @param WP_REST_Request $request REST request.
+	 *
+	 * @return WP_REST_Response
 	 */
-	public static function ajax_reorder(): void {
-		check_ajax_referer( 'sbd_category_admin' );
-
-		$order = isset( $_POST['order'] ) ? \array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['order'] ) ) : [];
+	public static function rest_reorder( WP_REST_Request $request ): WP_REST_Response {
+		$order = $request->get_param( 'order' );
+		if ( ! \is_array( $order ) ) {
+			return new WP_REST_Response( [ 'error' => 'Missing order.' ], 400 );
+		}
 
 		$client = ApiClient::from_settings();
 		foreach ( $order as $index => $cat_id ) {
+			$cat_id = sanitize_text_field( (string) $cat_id );
 			if ( $cat_id !== '' ) {
-				$client->update_category( $cat_id, [ 'sort_order' => $index ] );
+				$client->update_category( $cat_id, [ 'sort_order' => (int) $index ] );
 			}
 		}
 
 		ApiClient::flush_all_caches();
 
-		wp_send_json_success();
+		return new WP_REST_Response( [ 'status' => 'ok' ] );
 	}
 }

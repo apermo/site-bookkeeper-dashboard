@@ -1,10 +1,12 @@
 /**
- * Category management with AJAX, drag-and-drop reorder, and visual feedback.
+ * Category management with WP REST API, drag-and-drop reorder, and visual feedback.
  */
 ( function ( $ ) {
 	'use strict';
 
 	var debounceTimers = {};
+	var restUrl = sbdCategories.restUrl;
+	var nonce = sbdCategories.nonce;
 
 	/**
 	 * Show a brief status indicator on a row.
@@ -22,41 +24,53 @@
 	}
 
 	/**
+	 * Make a REST request.
+	 */
+	function restRequest( method, url, data ) {
+		return $.ajax( {
+			url: url,
+			method: method,
+			data: data ? JSON.stringify( data ) : undefined,
+			contentType: 'application/json',
+			beforeSend: function ( xhr ) {
+				xhr.setRequestHeader( 'X-WP-Nonce', nonce );
+			}
+		} );
+	}
+
+	/**
 	 * Save a single category row (create or update).
 	 */
 	function saveRow( $row ) {
 		var id = $row.data( 'id' ) || '';
 		var name = $row.find( '.sbd-cat-name' ).val().trim();
-		var overdue = $row.find( '.sbd-cat-overdue' ).val();
+		var overdue = parseInt( $row.find( '.sbd-cat-overdue' ).val(), 10 ) || 48;
 
 		if ( ! name ) {
 			return;
 		}
 
-		$.post( sbdCategories.ajaxUrl, {
-			action: 'sbd_category_save',
-			_ajax_nonce: sbdCategories.nonce,
-			id: id,
+		var data = {
 			name: name,
 			overdue_hours: overdue
-		}, function ( response ) {
-			if ( response.success && response.data ) {
-				var newId = response.data.id || '';
+		};
+
+		if ( id ) {
+			data.id = id;
+		}
+
+		restRequest( 'POST', restUrl, data )
+			.done( function ( response ) {
+				var newId = response && response.id ? response.id : '';
 				if ( ! $row.data( 'id' ) && newId ) {
 					$row.data( 'id', newId );
 					$row.attr( 'data-id', newId );
 				}
-				// Update slug display if present.
-				if ( response.data.slug ) {
-					$row.find( '.sbd-cat-slug-cell' ).text( response.data.slug );
-				}
 				showStatus( $row, '\u2713', 'success' );
-			} else {
+			} )
+			.fail( function () {
 				showStatus( $row, '\u2717', 'error' );
-			}
-		} ).fail( function () {
-			showStatus( $row, '\u2717', 'error' );
-		} );
+			} );
 	}
 
 	/**
@@ -82,11 +96,7 @@
 			}
 		} );
 
-		$.post( sbdCategories.ajaxUrl, {
-			action: 'sbd_category_reorder',
-			_ajax_nonce: sbdCategories.nonce,
-			order: order
-		} );
+		restRequest( 'POST', restUrl + '/reorder', { order: order } );
 	}
 
 	/**
@@ -95,7 +105,7 @@
 	function addRow() {
 		var $row = $( '<tr class="sbd-cat-row" data-id="">' +
 			'<td class="sbd-drag-handle" style="cursor:move">&#9776;</td>' +
-			'<td><input type="text" class="sbd-cat-name regular-text" value="" placeholder="Category name…" /></td>' +
+			'<td><input type="text" class="sbd-cat-name regular-text" value="" placeholder="Category name\u2026" /></td>' +
 			'<td><input type="number" class="sbd-cat-overdue" value="48" min="1" style="width:80px" /></td>' +
 			'<td>' +
 				'<button type="button" class="button-link sbd-cat-delete" style="color:#b32d2e">Delete</button>' +
@@ -135,19 +145,15 @@
 			return;
 		}
 
-		$.post( sbdCategories.ajaxUrl, {
-			action: 'sbd_category_delete',
-			_ajax_nonce: sbdCategories.nonce,
-			id: id
-		}, function ( response ) {
-			if ( response.success ) {
+		restRequest( 'DELETE', restUrl + '/' + id )
+			.done( function () {
 				$row.fadeOut( 300, function () {
 					$row.remove();
 				} );
-			} else {
+			} )
+			.fail( function () {
 				showStatus( $row, '\u2717', 'error' );
-			}
-		} );
+			} );
 	} );
 
 	// Add button.
