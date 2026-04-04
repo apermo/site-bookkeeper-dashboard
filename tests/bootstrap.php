@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Load stubs for unit tests (when WP core is not available).
-if ( ! class_exists( 'WP_List_Table' ) ) {
-	require_once __DIR__ . '/stubs/class-wp-list-table.php';
-}
-
 $wp_tests_dir = getenv( 'WP_TESTS_DIR' );
 
 if ( $wp_tests_dir === false ) {
@@ -28,6 +23,9 @@ if ( $wp_tests_dir !== false && is_dir( $wp_tests_dir ) ) {
 	tests_add_filter( 'muplugins_loaded', 'site_bookkeeper_dashboard_tests_load_project' );
 
 	require_once $wp_tests_dir . '/includes/bootstrap.php';
+} else {
+	// Load stubs for unit tests (WP core is not available).
+	require_once __DIR__ . '/stubs/class-wp-list-table.php';
 }
 
 /**
