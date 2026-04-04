@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   new submenu pages, CategoryAdmin hooks, `set_transient` last_checked, protected
   `get_row_class` visibility, and `sites_count` column changes
 
-## [0.1.0] - 2026-03-15
+## [0.1.0] - 2026-04-01
 
 ### Added
 
