@@ -5,6 +5,7 @@ A monitoring tool for your WordPress Sites — Dashboard Plugin
 [![PHP CI](https://github.com/apermo/site-bookkeeper-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/apermo/site-bookkeeper-dashboard/actions/workflows/ci.yml)
 [![License: GPL v2+](https://img.shields.io/badge/License-GPLv2+-blue.svg)](LICENSE)
 [![Packagist Version](https://img.shields.io/packagist/v/apermo/site-bookkeeper-dashboard)](https://packagist.org/packages/apermo/site-bookkeeper-dashboard)
+[![PHP Version](https://img.shields.io/packagist/dependency-v/apermo/site-bookkeeper-dashboard/php)](https://packagist.org/packages/apermo/site-bookkeeper-dashboard)
 
 WordPress admin dashboard for viewing site health data from a central
 [Site Bookkeeper Hub](https://github.com/apermo/site-bookkeeper-hub). Provides an at-a-glance overview of
