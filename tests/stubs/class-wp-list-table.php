@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * Minimal WP_List_Table stub for unit tests.
  *

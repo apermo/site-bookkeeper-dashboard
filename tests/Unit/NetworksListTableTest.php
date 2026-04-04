@@ -154,7 +154,7 @@ class NetworksListTableTest extends TestCase {
 
 		$table = new NetworksListTable();
 		$item  = [
-			'last_seen' => '2026-01-01T12:00:00+00:00',
+			'last_seen' => \gmdate( 'Y-m-d\TH:i:sP', \time() - ( 49 * 60 * 60 ) ),
 		];
 
 		\ob_start();
