@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+// Load stubs for unit tests (when WP core is not available).
+if ( ! class_exists( 'WP_List_Table' ) ) {
+	require_once __DIR__ . '/stubs/class-wp-list-table.php';
+}
+
 $wp_tests_dir = getenv( 'WP_TESTS_DIR' );
 
 if ( $wp_tests_dir === false ) {
