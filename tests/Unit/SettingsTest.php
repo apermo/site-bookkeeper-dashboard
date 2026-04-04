@@ -198,7 +198,7 @@ class SettingsTest extends TestCase {
 				'Site Bookkeeper Dashboard',
 				'Site Bookkeeper',
 				'manage_options',
-				'site_bookkeeper_dashboard',
+				'site_bookkeeper_dashboard_settings',
 				[ Settings::class, 'render_page' ],
 			);
 

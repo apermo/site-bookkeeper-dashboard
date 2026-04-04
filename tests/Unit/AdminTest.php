@@ -71,7 +71,7 @@ class AdminTest extends TestCase {
 			);
 
 		Functions\expect( 'add_submenu_page' )
-			->times( 5 );
+			->times( 6 );
 
 		Admin::register_pages();
 	}

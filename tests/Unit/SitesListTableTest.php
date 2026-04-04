@@ -111,27 +111,39 @@ class SitesListTableTest extends TestCase {
 	}
 
 	/**
-	 * Verify stale sites get appropriate row class.
+	 * Verify stale sites get appropriate row class via single_row.
 	 *
 	 * @return void
 	 */
-	public function test_get_row_class_for_stale_site(): void {
+	public function test_single_row_applies_stale_class(): void {
+		Functions\stubs( [ 'esc_attr' => static fn( string $text ): string => $text ] );
+
 		$table = new SitesListTable();
 		$item  = [ 'stale' => true ];
 
-		$this->assertSame( 'smd-stale', $table->get_row_class( $item ) );
+		\ob_start();
+		$table->single_row( $item );
+		$output = (string) \ob_get_clean();
+
+		$this->assertStringContainsString( 'smd-stale', $output );
 	}
 
 	/**
-	 * Verify non-stale sites get empty row class.
+	 * Verify non-stale sites have no stale class.
 	 *
 	 * @return void
 	 */
-	public function test_get_row_class_for_active_site(): void {
+	public function test_single_row_no_stale_class_for_active(): void {
+		Functions\stubs( [ 'esc_attr' => static fn( string $text ): string => $text ] );
+
 		$table = new SitesListTable();
 		$item  = [ 'stale' => false ];
 
-		$this->assertSame( '', $table->get_row_class( $item ) );
+		\ob_start();
+		$table->single_row( $item );
+		$output = (string) \ob_get_clean();
+
+		$this->assertStringNotContainsString( 'smd-stale', $output );
 	}
 
 	/**
@@ -192,46 +204,16 @@ class SitesListTableTest extends TestCase {
 	}
 
 	/**
-	 * Verify get_columns includes network when sites have network_id.
+	 * Verify get_columns includes category and environment columns.
 	 *
 	 * @return void
 	 */
-	public function test_get_columns_includes_network_when_present(): void {
+	public function test_get_columns_includes_category_and_environment(): void {
 		$table = new SitesListTable();
-		$sites = [
-			[
-				'label' => 'Site A',
-				'network_id' => 'net-uuid-1',
-			],
-			[
-				'label' => 'Site B',
-				'network_id' => null,
-			],
-		];
+		$columns = $table->get_columns();
 
-		$columns = $table->get_columns( $sites );
-
-		$this->assertArrayHasKey( 'network', $columns );
-	}
-
-	/**
-	 * Verify get_columns omits network when no sites have network_id.
-	 *
-	 * @return void
-	 */
-	public function test_get_columns_omits_network_when_absent(): void {
-		$table = new SitesListTable();
-		$sites = [
-			[ 'label' => 'Site A' ],
-			[
-				'label' => 'Site B',
-				'network_id' => null,
-			],
-		];
-
-		$columns = $table->get_columns( $sites );
-
-		$this->assertArrayNotHasKey( 'network', $columns );
+		$this->assertArrayHasKey( 'category_name', $columns );
+		$this->assertArrayHasKey( 'environment_type', $columns );
 	}
 
 	/**

@@ -79,6 +79,21 @@ class PluginReportTest extends TestCase {
 		];
 
 		$output = $report->column_sites( $item );
+		$this->assertSame( '0', $output );
+	}
+
+	/**
+	 * Verify column_sites renders sites_count when present.
+	 *
+	 * @return void
+	 */
+	public function test_column_sites_renders_sites_count(): void {
+		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
+
+		$report = new PluginReport();
+		$item = [ 'sites_count' => 2 ];
+
+		$output = $report->column_sites( $item );
 		$this->assertSame( '2', $output );
 	}
 

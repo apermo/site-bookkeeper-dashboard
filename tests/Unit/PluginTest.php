@@ -107,7 +107,7 @@ class PluginTest extends TestCase {
 		Functions\stubs( [ 'is_admin' => true ] );
 
 		Functions\expect( 'add_action' )
-			->times( 4 );
+			->times( 8 );
 
 		Plugin::boot();
 		$this->assertTrue( true );

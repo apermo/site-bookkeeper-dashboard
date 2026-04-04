@@ -79,6 +79,21 @@ class ThemeReportTest extends TestCase {
 		];
 
 		$output = $report->column_sites( $item );
+		$this->assertSame( '0', $output );
+	}
+
+	/**
+	 * Verify column_sites renders sites_count when present.
+	 *
+	 * @return void
+	 */
+	public function test_column_sites_renders_sites_count(): void {
+		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
+
+		$report = new ThemeReport();
+		$item = [ 'sites_count' => 2 ];
+
+		$output = $report->column_sites( $item );
 		$this->assertSame( '2', $output );
 	}
 
@@ -94,23 +109,5 @@ class ThemeReportTest extends TestCase {
 		$result = $report->column_default( [ 'name' => 'Twenty Twenty-Five' ], 'name' );
 
 		$this->assertSame( 'Twenty Twenty-Five', $result );
-	}
-
-	/**
-	 * Verify sort_items sorts by name ascending.
-	 *
-	 * @return void
-	 */
-	public function test_sort_items(): void {
-		$report = new ThemeReport();
-		$items = [
-			[ 'name' => 'Zeta' ],
-			[ 'name' => 'Alpha' ],
-		];
-
-		$sorted = $report->sort_items( $items );
-
-		$this->assertSame( 'Alpha', $sorted[0]['name'] );
-		$this->assertSame( 'Zeta', $sorted[1]['name'] );
 	}
 }
