@@ -18,6 +18,9 @@ all monitored sites, their plugin/theme update status, and cross-site reports.
 - WordPress 6.2+
 - A running [Site Bookkeeper Hub](https://github.com/apermo/site-bookkeeper-hub) instance with a client
   token
+- One or more sites using the
+  [Site Bookkeeper Reporter](https://github.com/apermo/site-bookkeeper-reporter) plugin to push data to the
+  hub
 
 ## Installation
 
