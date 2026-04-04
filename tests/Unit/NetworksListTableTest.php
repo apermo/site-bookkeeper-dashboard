@@ -145,66 +145,42 @@ class NetworksListTableTest extends TestCase {
 	}
 
 	/**
-	 * Verify sort_items sorts by label ascending.
+	 * Verify single_row applies stale class for old last_seen.
 	 *
 	 * @return void
 	 */
-	public function test_sort_items_by_label(): void {
-		$table = new NetworksListTable();
-		$items = [
-			[ 'label' => 'Zeta Network' ],
-			[ 'label' => 'Alpha Network' ],
-		];
+	public function test_single_row_applies_stale_class(): void {
+		Functions\stubs( [ 'esc_attr' => static fn( string $text ): string => $text ] );
 
-		$sorted = $table->sort_items( $items );
-
-		$this->assertSame( 'Alpha Network', $sorted[0]['label'] );
-		$this->assertSame( 'Zeta Network', $sorted[1]['label'] );
-	}
-
-	/**
-	 * Verify sort_items sorts descending.
-	 *
-	 * @return void
-	 */
-	public function test_sort_items_descending(): void {
-		$table = new NetworksListTable();
-		$items = [
-			[ 'label' => 'Alpha Network' ],
-			[ 'label' => 'Zeta Network' ],
-		];
-
-		$sorted = $table->sort_items( $items, 'label', 'desc' );
-
-		$this->assertSame( 'Zeta Network', $sorted[0]['label'] );
-		$this->assertSame( 'Alpha Network', $sorted[1]['label'] );
-	}
-
-	/**
-	 * Verify get_row_class returns stale class for old last_seen.
-	 *
-	 * @return void
-	 */
-	public function test_get_row_class_for_stale_network(): void {
 		$table = new NetworksListTable();
 		$item  = [
-			'last_seen' => '2026-01-01T12:00:00+00:00',
+			'last_seen' => \gmdate( 'Y-m-d\TH:i:sP', \time() - ( 49 * 60 * 60 ) ),
 		];
 
-		$this->assertSame( 'smd-stale', $table->get_row_class( $item ) );
+		\ob_start();
+		$table->single_row( $item );
+		$output = (string) \ob_get_clean();
+
+		$this->assertStringContainsString( 'smd-stale', $output );
 	}
 
 	/**
-	 * Verify get_row_class returns empty for recent last_seen.
+	 * Verify single_row has no stale class for recent last_seen.
 	 *
 	 * @return void
 	 */
-	public function test_get_row_class_for_active_network(): void {
+	public function test_single_row_no_stale_class_for_active(): void {
+		Functions\stubs( [ 'esc_attr' => static fn( string $text ): string => $text ] );
+
 		$table = new NetworksListTable();
 		$item  = [
 			'last_seen' => \gmdate( 'Y-m-d\TH:i:sP' ),
 		];
 
-		$this->assertSame( '', $table->get_row_class( $item ) );
+		\ob_start();
+		$table->single_row( $item );
+		$output = (string) \ob_get_clean();
+
+		$this->assertStringNotContainsString( 'smd-stale', $output );
 	}
 }

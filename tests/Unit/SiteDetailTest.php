@@ -35,16 +35,39 @@ class SiteDetailTest extends TestCase {
 	}
 
 	/**
-	 * Stub common WordPress escaping functions.
+	 * Stub common WordPress escaping and utility functions.
 	 *
 	 * @return void
 	 */
 	private function stub_escaping(): void {
 		Functions\stubs(
 			[
-				'esc_html' => static fn( string $text ): string => $text,
-				'esc_html__' => static fn( string $text ): string => $text,
-				'esc_attr' => static fn( string $text ): string => $text,
+				'esc_html'      => static fn( string $text ): string => $text,
+				'esc_html__'    => static fn( string $text ): string => $text,
+				'esc_attr'      => static fn( string $text ): string => $text,
+				'esc_textarea'  => static fn( string $text ): string => $text,
+				'__'            => static fn( string $text ): string => $text,
+				'get_option'    => static fn(): string => '',
+				'get_transient' => static fn(): false => false,
+				'set_transient' => static fn(): bool => true,
+			],
+		);
+
+		Functions\stubs(
+			[
+				'wp_nonce_field' => static fn(): string => '',
+				'selected'       => static fn(): string => '',
+				'submit_button'  => static fn(): string => '',
+				'is_wp_error'    => static fn(): bool => false,
+				'wp_remote_retrieve_response_code' => static fn(): int => 200,
+				'wp_remote_retrieve_body'          => static fn(): string => '{"categories":[]}',
+			],
+		);
+
+		Functions\when( 'wp_remote_get' )->justReturn(
+			[
+				'response' => [ 'code' => 200 ],
+				'body'     => '{"categories":[]}',
 			],
 		);
 	}

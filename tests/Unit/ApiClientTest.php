@@ -139,7 +139,7 @@ class ApiClientTest extends TestCase {
 		Functions\expect( 'is_wp_error' )->once()->andReturn( false );
 		Functions\expect( 'wp_remote_retrieve_response_code' )->once()->andReturn( 200 );
 		Functions\expect( 'wp_remote_retrieve_body' )->once()->andReturn( $body );
-		Functions\expect( 'set_transient' )->once();
+		Functions\expect( 'set_transient' )->twice();
 
 		$client = $this->create_client();
 		$result = $client->get_site( 'uuid-1' );
@@ -180,7 +180,7 @@ class ApiClientTest extends TestCase {
 		Functions\expect( 'is_wp_error' )->once()->andReturn( false );
 		Functions\expect( 'wp_remote_retrieve_response_code' )->once()->andReturn( 200 );
 		Functions\expect( 'wp_remote_retrieve_body' )->once()->andReturn( $body );
-		Functions\expect( 'set_transient' )->once();
+		Functions\expect( 'set_transient' )->twice();
 
 		$client = $this->create_client();
 		$result = $client->get_plugins( [ 'outdated' => 'true' ] );
@@ -215,7 +215,7 @@ class ApiClientTest extends TestCase {
 		Functions\expect( 'is_wp_error' )->once()->andReturn( false );
 		Functions\expect( 'wp_remote_retrieve_response_code' )->once()->andReturn( 200 );
 		Functions\expect( 'wp_remote_retrieve_body' )->once()->andReturn( $body );
-		Functions\expect( 'set_transient' )->once();
+		Functions\expect( 'set_transient' )->twice();
 
 		$client = $this->create_client();
 		$result = $client->get_themes( [ 'slug' => 'twentytwentyfive' ] );
@@ -428,7 +428,7 @@ class ApiClientTest extends TestCase {
 		Functions\expect( 'is_wp_error' )->once()->andReturn( false );
 		Functions\expect( 'wp_remote_retrieve_response_code' )->once()->andReturn( 200 );
 		Functions\expect( 'wp_remote_retrieve_body' )->once()->andReturn( $body );
-		Functions\expect( 'set_transient' )->once();
+		Functions\expect( 'set_transient' )->twice();
 
 		$client = $this->create_client();
 		$result = $client->get_network( 'net-uuid-1' );
@@ -504,7 +504,7 @@ class ApiClientTest extends TestCase {
 		Functions\expect( 'is_wp_error' )->once()->andReturn( false );
 		Functions\expect( 'wp_remote_retrieve_response_code' )->once()->andReturn( 200 );
 		Functions\expect( 'wp_remote_retrieve_body' )->once()->andReturn( $body );
-		Functions\expect( 'set_transient' )->once();
+		Functions\expect( 'set_transient' )->twice();
 
 		$client = new ApiClient( 'http://insecure.example.tld', 'test-token' );
 		$result = $client->get_sites();
