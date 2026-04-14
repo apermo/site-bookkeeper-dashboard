@@ -1,5 +1,5 @@
 name: site-bookkeeper-dashboard
-type: php
+type: wordpress
 docroot: .ddev/wordpress
 php_version: "8.4"
 hooks:
