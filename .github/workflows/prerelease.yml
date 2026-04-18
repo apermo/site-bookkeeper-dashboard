@@ -9,7 +9,7 @@ on:
 
 jobs:
     prerelease:
-        uses: apermo/reusable-workflows/.github/workflows/reusable-prerelease.yml@v0.4.1
+        uses: apermo/reusable-workflows/.github/workflows/reusable-prerelease.yml@v0.4.2
         permissions:
             contents: write
             pull-requests: write
