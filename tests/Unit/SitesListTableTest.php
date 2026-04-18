@@ -147,6 +147,68 @@ class SitesListTableTest extends TestCase {
 	}
 
 	/**
+	 * Overdue rows pick up the smd-overdue class.
+	 *
+	 * @return void
+	 */
+	public function test_single_row_applies_overdue_class(): void {
+		Functions\stubs( [ 'esc_attr' => static fn( string $text ): string => $text ] );
+
+		$table = new SitesListTable();
+		$item  = [ 'overdue' => true ];
+
+		\ob_start();
+		$table->single_row( $item );
+		$output = (string) \ob_get_clean();
+
+		$this->assertStringContainsString( 'smd-overdue', $output );
+	}
+
+	/**
+	 * Combined stale + overdue rows pick up the more severe overdue class.
+	 *
+	 * @return void
+	 */
+	public function test_single_row_stale_overdue_uses_overdue_class(): void {
+		Functions\stubs( [ 'esc_attr' => static fn( string $text ): string => $text ] );
+
+		$table = new SitesListTable();
+		$item  = [
+			'stale'   => true,
+			'overdue' => true,
+		];
+
+		\ob_start();
+		$table->single_row( $item );
+		$output = (string) \ob_get_clean();
+
+		$this->assertStringContainsString( 'smd-overdue', $output );
+		$this->assertStringNotContainsString( 'smd-stale', $output );
+	}
+
+	/**
+	 * Column_state renders the emoji badge keyed to the row's state.
+	 *
+	 * @return void
+	 */
+	public function test_column_state_renders_badge(): void {
+		Functions\stubs(
+			[
+				'__'       => static fn( string $text ): string => $text,
+				'esc_attr' => static fn( string $text ): string => $text,
+				'esc_html' => static fn( string $text ): string => $text,
+			],
+		);
+
+		$table = new SitesListTable();
+		$item  = [ 'state' => SitesListTable::STATE_OVERDUE ];
+
+		$output = $table->column_state( $item );
+
+		$this->assertStringContainsString( 'smd-state-overdue', $output );
+	}
+
+	/**
 	 * Verify pending_updates column highlights when > 0.
 	 *
 	 * @return void

@@ -47,7 +47,7 @@ class NetworksListTableTest extends TestCase {
 		$this->assertArrayHasKey( 'main_site_url', $columns );
 		$this->assertArrayHasKey( 'subsite_count', $columns );
 		$this->assertArrayHasKey( 'last_seen', $columns );
-		$this->assertArrayHasKey( 'status', $columns );
+		$this->assertArrayHasKey( 'state', $columns );
 	}
 
 	/**
@@ -93,39 +93,47 @@ class NetworksListTableTest extends TestCase {
 	}
 
 	/**
-	 * Verify column_status renders stale indicator.
+	 * Verify column_state renders the stale emoji badge for a row flagged stale.
 	 *
 	 * @return void
 	 */
-	public function test_column_status_renders_stale(): void {
-		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
+	public function test_column_state_renders_stale_badge(): void {
+		Functions\stubs(
+			[
+				'__'       => static fn( string $text ): string => $text,
+				'esc_attr' => static fn( string $text ): string => $text,
+				'esc_html' => static fn( string $text ): string => $text,
+			],
+		);
 
 		$table = new NetworksListTable();
-		$item  = [
-			'last_seen' => '2026-03-01T12:00:00+00:00',
-		];
+		$item  = [ 'state' => NetworksListTable::STATE_STALE ];
 
-		$output = $table->column_status( $item );
+		$output = $table->column_state( $item );
 
-		$this->assertStringContainsString( 'smd-badge', $output );
+		$this->assertStringContainsString( 'smd-state-stale', $output );
 	}
 
 	/**
-	 * Verify column_status renders OK for recent check-in.
+	 * Verify column_state renders the fresh emoji badge for a fresh row.
 	 *
 	 * @return void
 	 */
-	public function test_column_status_renders_ok(): void {
-		Functions\stubs( [ 'esc_html' => static fn( string $text ): string => $text ] );
+	public function test_column_state_renders_fresh_badge(): void {
+		Functions\stubs(
+			[
+				'__'       => static fn( string $text ): string => $text,
+				'esc_attr' => static fn( string $text ): string => $text,
+				'esc_html' => static fn( string $text ): string => $text,
+			],
+		);
 
 		$table = new NetworksListTable();
-		$item  = [
-			'last_seen' => \gmdate( 'Y-m-d\TH:i:sP' ),
-		];
+		$item  = [ 'state' => NetworksListTable::STATE_FRESH ];
 
-		$output = $table->column_status( $item );
+		$output = $table->column_state( $item );
 
-		$this->assertStringContainsString( 'OK', $output );
+		$this->assertStringContainsString( 'smd-state-fresh', $output );
 	}
 
 	/**

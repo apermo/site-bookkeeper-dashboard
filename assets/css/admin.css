@@ -2,18 +2,27 @@
  * Site Bookkeeper Dashboard admin styles.
  */
 
-/* Stale sites */
-.smd-stale {
-	opacity: 0.6;
+/* State row styles — left border stripe on the first cell.
+   Applied to the cell rather than the <tr> because WP admin tables use
+   `border-collapse: collapse`, where <tr> borders are not rendered. */
+.smd-stale > td:first-child {
+	border-left: 3px solid #dba617;
 }
 
-.smd-stale td {
-	color: #a7aaad;
-}
-
-/* Overdue sites */
-.smd-overdue {
+.smd-overdue > td:first-child {
 	border-left: 3px solid #d63638;
+}
+
+/* State column */
+.column-state {
+	width: 90px;
+	text-align: center;
+}
+
+.smd-state {
+	display: inline-block;
+	font-size: 16px;
+	line-height: 1;
 }
 
 /* Category column */

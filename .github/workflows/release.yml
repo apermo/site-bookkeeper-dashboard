@@ -7,9 +7,9 @@ on:
 
 jobs:
     conventional-commits:
-        uses: apermo/reusable-workflows/.github/workflows/reusable-conventional-commits.yml@main
+        uses: apermo/reusable-workflows/.github/workflows/reusable-conventional-commits.yml@v0.4.3
     release:
-        uses: apermo/reusable-workflows/.github/workflows/reusable-release.yml@main
+        uses: apermo/reusable-workflows/.github/workflows/reusable-release.yml@v0.4.3
         permissions:
             contents: write
             pull-requests: write

@@ -54,7 +54,9 @@ define( 'SITE_BOOKKEEPER_ALLOW_HTTP', true );
 ### Sites Overview
 
 `WP_List_Table` with sortable columns: site URL, WordPress version, PHP version, pending plugin/theme
-updates, last seen, stale indicator. Stale sites (no report in 48h) are highlighted.
+updates, last seen, and a **State** column showing 🟢 fresh / ⚠️ stale / ⏰ overdue / ⚠️⏰ both.
+Rows pick up an amber (stale) or red (overdue) left border. State is sortable (worst first by default)
+and filterable via its own dropdown, including a "Stale or overdue" union option.
 
 ### Site Detail
 

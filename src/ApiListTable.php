@@ -17,6 +17,33 @@ use WP_List_Table;
 abstract class ApiListTable extends WP_List_Table {
 
 	/**
+	 * State: report recent, no updates overdue.
+	 */
+	public const STATE_FRESH = 'fresh';
+
+	/**
+	 * State: no report in stale window, updates not overdue.
+	 */
+	public const STATE_STALE = 'stale';
+
+	/**
+	 * State: updates overdue, report recent.
+	 */
+	public const STATE_OVERDUE = 'overdue';
+
+	/**
+	 * State: no report AND updates overdue.
+	 */
+	public const STATE_STALE_OVERDUE = 'stale_overdue';
+
+	/**
+	 * Filter-only pseudo-state: matches any row with stale OR overdue OR both.
+	 *
+	 * Not produced by `derive_state()` — only used as a filter value.
+	 */
+	public const FILTER_ANY_ISSUE = 'any_issue';
+
+	/**
 	 * API error response, if any.
 	 *
 	 * @var array<string, mixed>|null
@@ -46,6 +73,123 @@ abstract class ApiListTable extends WP_List_Table {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Derive a state from a row's `stale` / `overdue` flags.
+	 *
+	 * Covers the full 2x2 matrix of stale + overdue combinations.
+	 *
+	 * @param array<string, mixed> $item Row data. Expected keys: stale, overdue.
+	 *
+	 * @return string One of the STATE_* constants.
+	 */
+	public static function derive_state( array $item ): string {
+		$is_stale   = ( $item['stale'] ?? false ) === true;
+		$is_overdue = ( $item['overdue'] ?? false ) === true;
+
+		return match ( true ) {
+			$is_stale && $is_overdue   => self::STATE_STALE_OVERDUE,
+			$is_overdue                => self::STATE_OVERDUE,
+			$is_stale                  => self::STATE_STALE,
+			default                    => self::STATE_FRESH,
+		};
+	}
+
+	/**
+	 * Return the emoji indicator for a state.
+	 *
+	 * Stale-and-overdue is rendered as the combined ⚠️⏰ pair by
+	 * `state_badge_html()` rather than a distinct icon.
+	 *
+	 * @param string $state State constant.
+	 *
+	 * @return string Emoji character(s), empty for unknown states.
+	 */
+	public static function state_emoji( string $state ): string {
+		return match ( $state ) {
+			self::STATE_FRESH         => '🟢',
+			self::STATE_STALE         => '⚠️',
+			self::STATE_OVERDUE       => '⏰',
+			self::STATE_STALE_OVERDUE => '⚠️⏰',
+			default                       => '',
+		};
+	}
+
+	/**
+	 * Return a human-readable label for a state.
+	 *
+	 * @param string $state State constant.
+	 *
+	 * @return string Translated label.
+	 */
+	public static function state_label( string $state ): string {
+		return match ( $state ) {
+			self::STATE_FRESH         => __( 'Fresh — report recent and updates on schedule.', 'site-bookkeeper-dashboard' ),
+			self::STATE_STALE         => __( 'Stale — no report in the last 48 hours.', 'site-bookkeeper-dashboard' ),
+			self::STATE_OVERDUE       => __( 'Overdue — pending updates past the category threshold.', 'site-bookkeeper-dashboard' ),
+			self::STATE_STALE_OVERDUE => __( 'Stale and overdue — no recent report and updates past threshold.', 'site-bookkeeper-dashboard' ),
+			default                       => '',
+		};
+	}
+
+	/**
+	 * Render the state cell for a row.
+	 *
+	 * Shows one emoji per active flag (⚠️ for stale, ⏰ for overdue),
+	 * or 🟢 when the row is fresh. The tooltip narrates the state.
+	 *
+	 * @param string $state State constant.
+	 *
+	 * @return string HTML.
+	 */
+	public static function state_badge_html( string $state ): string {
+		$emoji = self::state_emoji( $state );
+		$label = self::state_label( $state );
+
+		if ( $emoji === '' ) {
+			return '';
+		}
+
+		return \sprintf(
+			'<span class="smd-state smd-state-%s" title="%s" aria-label="%s">%s</span>',
+			esc_attr( $state ),
+			esc_attr( $label ),
+			esc_attr( $label ),
+			esc_html( $emoji ),
+		);
+	}
+
+	/**
+	 * Map a state to the CSS class applied to the row.
+	 *
+	 * @param string $state State constant.
+	 *
+	 * @return string Row CSS class, empty for fresh rows.
+	 */
+	public static function state_row_class( string $state ): string {
+		return match ( $state ) {
+			self::STATE_OVERDUE, self::STATE_STALE_OVERDUE => 'smd-overdue',
+			self::STATE_STALE                              => 'smd-stale',
+			default                                        => '',
+		};
+	}
+
+	/**
+	 * Sort rank for a state (ascending = fresh → stale → overdue).
+	 *
+	 * @param string $state State constant.
+	 *
+	 * @return int
+	 */
+	public static function state_rank( string $state ): int {
+		return match ( $state ) {
+			self::STATE_FRESH         => 0,
+			self::STATE_STALE         => 1,
+			self::STATE_OVERDUE       => 2,
+			self::STATE_STALE_OVERDUE => 3,
+			default                       => 9,
+		};
 	}
 
 	/**
@@ -288,14 +432,26 @@ abstract class ApiListTable extends WP_List_Table {
 	private function sort_fetched_items( array $items ): array {
 		$sortable = $this->get_sortable_columns();
 
+		// Build a map of the URL `orderby` value (the [0] entry of each
+		// sortable definition, which may differ from the column id — e.g.
+		// the `state` column sorts by `state_rank`) to the item field to
+		// compare. WP_List_Table emits the mapped value in column links, so
+		// we validate and resolve against that.
+		$orderby_map = [];
+		foreach ( $sortable as $config ) {
+			if ( isset( $config[0] ) ) {
+				$orderby_map[ (string) $config[0] ] = (string) $config[0];
+			}
+		}
+
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only sort params.
 		$orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( wp_unslash( $_GET['orderby'] ) ) : '';
 		$order = isset( $_GET['order'] ) ? sanitize_text_field( wp_unslash( $_GET['order'] ) ) : 'asc';
 		// phpcs:enable
 
-		if ( $orderby === '' || ! isset( $sortable[ $orderby ] ) ) {
+		if ( ! isset( $orderby_map[ $orderby ] ) ) {
 			$first = \array_key_first( $sortable );
-			$orderby = $first ?? '';
+			$orderby = $first !== null && isset( $sortable[ $first ][0] ) ? (string) $sortable[ $first ][0] : '';
 		}
 
 		if ( $orderby === '' ) {

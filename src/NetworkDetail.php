@@ -192,9 +192,14 @@ class NetworkDetail {
 		echo '<thead><tr>';
 		echo '<th>' . esc_html__( 'Site', 'site-bookkeeper-dashboard' ) . '</th>';
 		echo '<th>' . esc_html__( 'URL', 'site-bookkeeper-dashboard' ) . '</th>';
+		echo '<th class="column-state">' . esc_html__( 'State', 'site-bookkeeper-dashboard' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
 		foreach ( $subsites as $subsite ) {
+			if ( ! \is_array( $subsite ) ) {
+				continue;
+			}
+
 			$detail_url = admin_url(
 				\sprintf(
 					'admin.php?page=site_bookkeeper_dashboard_detail&site_id=%s',
@@ -202,7 +207,10 @@ class NetworkDetail {
 				),
 			);
 
-			echo '<tr>';
+			$state     = ApiListTable::derive_state( $subsite );
+			$row_class = ApiListTable::state_row_class( $state );
+
+			\printf( '<tr class="%s">', esc_attr( $row_class ) );
 			echo '<td>';
 			\printf(
 				'<a href="%s">%s</a>',
@@ -211,6 +219,10 @@ class NetworkDetail {
 			);
 			echo '</td>';
 			echo '<td>' . esc_html( (string) ( $subsite['site_url'] ?? '' ) ) . '</td>';
+			echo '<td class="column-state">';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output escaped inside helper.
+			echo ApiListTable::state_badge_html( $state );
+			echo '</td>';
 			echo '</tr>';
 		}
 
