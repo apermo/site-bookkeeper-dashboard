@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Pin reusable GitHub workflows to `apermo/reusable-workflows@v0.4.0`
+- Pin reusable GitHub workflows to `apermo/reusable-workflows@v0.4.3`
 - Track `composer.lock` in the repository for reproducible installs
 
 ## [0.1.1] - 2026-04-04
