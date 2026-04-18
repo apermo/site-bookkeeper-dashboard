@@ -161,6 +161,21 @@ abstract class ApiListTable extends WP_List_Table {
 	}
 
 	/**
+	 * Map a state to the CSS class applied to the row.
+	 *
+	 * @param string $state State constant.
+	 *
+	 * @return string Row CSS class, empty for fresh rows.
+	 */
+	public static function state_row_class( string $state ): string {
+		return match ( $state ) {
+			self::STATE_OVERDUE, self::STATE_STALE_OVERDUE => 'smd-overdue',
+			self::STATE_STALE                              => 'smd-stale',
+			default                                        => '',
+		};
+	}
+
+	/**
 	 * Sort rank for a state (ascending = fresh → stale → overdue).
 	 *
 	 * @param string $state State constant.
@@ -417,14 +432,26 @@ abstract class ApiListTable extends WP_List_Table {
 	private function sort_fetched_items( array $items ): array {
 		$sortable = $this->get_sortable_columns();
 
+		// Build a map of the URL `orderby` value (the [0] entry of each
+		// sortable definition, which may differ from the column id — e.g.
+		// the `state` column sorts by `state_rank`) to the item field to
+		// compare. WP_List_Table emits the mapped value in column links, so
+		// we validate and resolve against that.
+		$orderby_map = [];
+		foreach ( $sortable as $config ) {
+			if ( isset( $config[0] ) ) {
+				$orderby_map[ (string) $config[0] ] = (string) $config[0];
+			}
+		}
+
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only sort params.
 		$orderby = isset( $_GET['orderby'] ) ? sanitize_text_field( wp_unslash( $_GET['orderby'] ) ) : '';
 		$order = isset( $_GET['order'] ) ? sanitize_text_field( wp_unslash( $_GET['order'] ) ) : 'asc';
 		// phpcs:enable
 
-		if ( $orderby === '' || ! isset( $sortable[ $orderby ] ) ) {
+		if ( ! isset( $orderby_map[ $orderby ] ) ) {
 			$first = \array_key_first( $sortable );
-			$orderby = $first ?? '';
+			$orderby = $first !== null && isset( $sortable[ $first ][0] ) ? (string) $sortable[ $first ][0] : '';
 		}
 
 		if ( $orderby === '' ) {

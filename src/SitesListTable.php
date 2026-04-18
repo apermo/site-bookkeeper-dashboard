@@ -63,7 +63,7 @@ class SitesListTable extends ApiListTable {
 			$cat = $site['category'] ?? null;
 			$site['category_name'] = \is_array( $cat ) ? ( $cat['name'] ?? '' ) : '';
 			$site['category_slug'] = \is_array( $cat ) ? ( $cat['slug'] ?? '' ) : '';
-			$site['state']      = self::derive_state( $site );
+			$site['state'] = self::derive_state( $site );
 			$site['state_rank'] = self::state_rank( $site['state'] );
 		}
 		unset( $site );
@@ -517,12 +517,7 @@ class SitesListTable extends ApiListTable {
 	protected function get_row_class( array $item ): string {
 		$state = (string) ( $item['state'] ?? self::derive_state( $item ) );
 
-		return match ( $state ) {
-			self::STATE_STALE_OVERDUE => 'smd-overdue',
-			self::STATE_OVERDUE       => 'smd-overdue',
-			self::STATE_STALE         => 'smd-stale',
-			default                       => '',
-		};
+		return self::state_row_class( $state );
 	}
 
 	/**

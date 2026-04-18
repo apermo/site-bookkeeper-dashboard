@@ -207,13 +207,8 @@ class NetworkDetail {
 				),
 			);
 
-			$state = ApiListTable::derive_state( $subsite );
-			$row_class = match ( $state ) {
-				ApiListTable::STATE_STALE_OVERDUE => 'smd-overdue',
-				ApiListTable::STATE_OVERDUE       => 'smd-overdue',
-				ApiListTable::STATE_STALE         => 'smd-stale',
-				default                               => '',
-			};
+			$state     = ApiListTable::derive_state( $subsite );
+			$row_class = ApiListTable::state_row_class( $state );
 
 			\printf( '<tr class="%s">', esc_attr( $row_class ) );
 			echo '<td>';

@@ -8,7 +8,9 @@ TARGET_DIR="${WP_PATH}/wp-content/mu-plugins"
 
 if [ ! -d "$SOURCE_DIR" ]; then
     echo "No mu-plugins source directory at ${SOURCE_DIR}. Skipping."
-    return 0
+    # Fragments are normally sourced by `ddev orchestrate`; fall back to
+    # `exit 0` if this script is ever executed directly.
+    return 0 2>/dev/null || exit 0
 fi
 
 mkdir -p "$TARGET_DIR"

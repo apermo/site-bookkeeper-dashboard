@@ -135,7 +135,6 @@ class NetworksListTable extends ApiListTable {
 			'main_site_url' => 'Main Site URL',
 			'subsite_count' => 'Subsites',
 			'last_seen'     => 'Last Seen',
-			'status'        => 'Status',
 			'state'         => 'State',
 		];
 	}
@@ -189,24 +188,6 @@ class NetworksListTable extends ApiListTable {
 			esc_html( (string) ( $item['label'] ?? '' ) ),
 			esc_html( (string) ( $item['main_site_url'] ?? '' ) ),
 		);
-	}
-
-	/**
-	 * Render the status column with stale indicator.
-	 *
-	 * @param array<string, mixed> $item Network data row.
-	 *
-	 * @return string
-	 */
-	public function column_status( array $item ): string {
-		if ( $this->is_stale( $item ) ) {
-			return \sprintf(
-				'<span class="smd-badge smd-badge-warning">%s</span>',
-				esc_html( 'Stale' ),
-			);
-		}
-
-		return esc_html( 'OK' );
 	}
 
 	/**
