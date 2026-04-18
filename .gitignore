@@ -10,3 +10,4 @@ test-results/
 
 # WordPress core (downloaded by DDEV orchestrate)
 .ddev/wordpress/
+/wp-config.php
