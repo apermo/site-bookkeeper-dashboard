@@ -59,4 +59,4 @@ ddev start && ddev orchestrate   # Full WordPress environment
 ```
 
 - WordPress installs into `.ddev/wordpress/` subdirectory (keeps project root clean)
-- `ddev-orchestrate` symlinks the project into the WP plugins/themes directory automatically
+- `ddev orchestrate` symlinks the project into the WP plugins/themes directory automatically
