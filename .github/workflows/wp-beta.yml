@@ -7,7 +7,7 @@ on:
 
 jobs:
     beta:
-        uses: apermo/reusable-workflows/.github/workflows/reusable-wp-integration.yml@main
+        uses: apermo/reusable-workflows/.github/workflows/reusable-wp-integration.yml@v0.4.0
         with:
             php-versions: '["8.3","8.4"]'
             wp-versions: '["beta"]'
