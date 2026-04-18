@@ -13,7 +13,8 @@ xhprof/
 
 # Addon files (managed by ddev add-on)
 commands/
-orchestrate/
+orchestrate/*
+!orchestrate/project/
 
 # WordPress (downloaded by orchestrate)
 wordpress/
