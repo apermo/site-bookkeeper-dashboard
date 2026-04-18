@@ -63,6 +63,8 @@ class SitesListTable extends ApiListTable {
 			$cat = $site['category'] ?? null;
 			$site['category_name'] = \is_array( $cat ) ? ( $cat['name'] ?? '' ) : '';
 			$site['category_slug'] = \is_array( $cat ) ? ( $cat['slug'] ?? '' ) : '';
+			$site['state']      = self::derive_state( $site );
+			$site['state_rank'] = self::state_rank( $site['state'] );
 		}
 		unset( $site );
 
@@ -86,6 +88,7 @@ class SitesListTable extends ApiListTable {
 			'pending_updates'  => 'Pending Updates',
 			'last_seen'        => 'Last Seen',
 			'last_updated'     => 'Last Updated',
+			'state'            => 'State',
 		];
 
 		if ( $this->has_networks ) {
@@ -112,7 +115,22 @@ class SitesListTable extends ApiListTable {
 			'pending_updates'  => [ 'pending_updates', false ],
 			'last_seen'        => [ 'last_seen', true ],
 			'last_updated'     => [ 'last_updated', false ],
+			'state'            => [ 'state_rank', true ],
 		];
+	}
+
+	/**
+	 * Render the state column with the appropriate emoji badge.
+	 *
+	 * @param array<string, mixed> $item Site data row.
+	 *
+	 * @return string
+	 */
+	public function column_state( array $item ): string {
+		$state = (string) ( $item['state'] ?? self::STATE_FRESH );
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output escaped inside helper.
+		return self::state_badge_html( $state );
 	}
 
 	/**
@@ -128,6 +146,7 @@ class SitesListTable extends ApiListTable {
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only filter params.
+		$current_state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
 		$current_cat = isset( $_GET['category'] ) ? sanitize_text_field( wp_unslash( $_GET['category'] ) ) : '';
 		$current_env = isset( $_GET['environment_type'] ) ? sanitize_text_field( wp_unslash( $_GET['environment_type'] ) ) : '';
 		$current_wp = isset( $_GET['wp_version'] ) ? sanitize_text_field( wp_unslash( $_GET['wp_version'] ) ) : '';
@@ -135,12 +154,47 @@ class SitesListTable extends ApiListTable {
 		// phpcs:enable
 
 		echo '<div class="alignleft actions">';
+		$this->render_state_filter( $current_state );
 		$this->render_category_filter( $current_cat );
 		$this->render_env_filter( $current_env );
 		$this->render_wp_filter( $current_wp );
 		$this->render_updates_filter( $current_updates );
 		submit_button( __( 'Filter', 'site-bookkeeper-dashboard' ), '', 'filter_action', false );
 		echo '</div>';
+	}
+
+	/**
+	 * Render the state filter dropdown.
+	 *
+	 * @param string $current Currently selected state.
+	 *
+	 * @return void
+	 */
+	private function render_state_filter( string $current ): void {
+		$options = [
+			self::STATE_FRESH      => [ __( 'Fresh', 'site-bookkeeper-dashboard' ), self::state_emoji( self::STATE_FRESH ) ],
+			self::STATE_OVERDUE    => [ __( 'Overdue', 'site-bookkeeper-dashboard' ), self::state_emoji( self::STATE_OVERDUE ) ],
+			self::STATE_STALE      => [ __( 'Stale', 'site-bookkeeper-dashboard' ), self::state_emoji( self::STATE_STALE ) ],
+			self::FILTER_ANY_ISSUE => [ __( 'Stale or overdue', 'site-bookkeeper-dashboard' ), self::state_emoji( self::STATE_STALE_OVERDUE ) ],
+		];
+
+		\uasort(
+			$options,
+			static fn( array $left, array $right ): int => \strnatcasecmp( $left[0], $right[0] ),
+		);
+
+		echo '<select name="state">';
+		echo '<option value="">' . esc_html__( 'All states', 'site-bookkeeper-dashboard' ) . '</option>';
+		foreach ( $options as $value => $option ) {
+			\printf(
+				'<option value="%s" %s>%s %s</option>',
+				esc_attr( $value ),
+				selected( $current, $value, false ),
+				esc_html( $option[1] ),
+				esc_html( $option[0] ),
+			);
+		}
+		echo '</select>';
 	}
 
 	/**
@@ -152,11 +206,24 @@ class SitesListTable extends ApiListTable {
 	 */
 	private function apply_filters( array $items ): array {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only filter params.
+		$state_filter = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
 		$cat_filter = isset( $_GET['category'] ) ? sanitize_text_field( wp_unslash( $_GET['category'] ) ) : '';
 		$env_filter = isset( $_GET['environment_type'] ) ? sanitize_text_field( wp_unslash( $_GET['environment_type'] ) ) : '';
 		$wp_filter = isset( $_GET['wp_version'] ) ? sanitize_text_field( wp_unslash( $_GET['wp_version'] ) ) : '';
 		$updates_filter = isset( $_GET['has_updates'] ) ? sanitize_text_field( wp_unslash( $_GET['has_updates'] ) ) : '';
 		// phpcs:enable
+
+		if ( $state_filter === self::FILTER_ANY_ISSUE ) {
+			$items = \array_filter(
+				$items,
+				static fn( array $item ): bool => ( $item['state'] ?? self::STATE_FRESH ) !== self::STATE_FRESH,
+			);
+		} elseif ( $state_filter !== '' ) {
+			$items = \array_filter(
+				$items,
+				static fn( array $item ): bool => ( $item['state'] ?? '' ) === $state_filter,
+			);
+		}
 
 		if ( $cat_filter !== '' ) {
 			$items = \array_filter(
@@ -240,7 +307,7 @@ class SitesListTable extends ApiListTable {
 	 * @return void
 	 */
 	private function render_env_filter( string $current ): void {
-		$options = [ 'production', 'staging', 'development', 'local' ];
+		$options = [ 'development', 'local', 'production', 'staging' ];
 
 		echo '<select name="environment_type">';
 		echo '<option value="">' . esc_html__( 'All environments', 'site-bookkeeper-dashboard' ) . '</option>';
@@ -448,15 +515,14 @@ class SitesListTable extends ApiListTable {
 	 * @return string
 	 */
 	protected function get_row_class( array $item ): string {
-		if ( isset( $item['stale'] ) && $item['stale'] === true ) {
-			return 'smd-stale';
-		}
+		$state = (string) ( $item['state'] ?? self::derive_state( $item ) );
 
-		if ( isset( $item['overdue'] ) && $item['overdue'] === true ) {
-			return 'smd-overdue';
-		}
-
-		return '';
+		return match ( $state ) {
+			self::STATE_STALE_OVERDUE => 'smd-overdue',
+			self::STATE_OVERDUE       => 'smd-overdue',
+			self::STATE_STALE         => 'smd-stale',
+			default                       => '',
+		};
 	}
 
 	/**

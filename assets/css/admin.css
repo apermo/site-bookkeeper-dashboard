@@ -2,18 +2,25 @@
  * Site Bookkeeper Dashboard admin styles.
  */
 
-/* Stale sites */
+/* State row styles — left border stripe instead of opacity */
 .smd-stale {
-	opacity: 0.6;
+	border-left: 3px solid #dba617;
 }
 
-.smd-stale td {
-	color: #a7aaad;
-}
-
-/* Overdue sites */
 .smd-overdue {
 	border-left: 3px solid #d63638;
+}
+
+/* State column */
+.column-state {
+	width: 90px;
+	text-align: center;
+}
+
+.smd-state {
+	display: inline-block;
+	font-size: 16px;
+	line-height: 1;
 }
 
 /* Category column */

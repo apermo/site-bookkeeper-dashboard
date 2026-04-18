@@ -47,6 +47,7 @@ class NetworkDetailTest extends TestCase {
 				'esc_attr' => static fn( string $text ): string => $text,
 				'esc_url' => static fn( string $url ): string => $url,
 				'admin_url' => static fn( string $path ): string => '/wp-admin/' . $path,
+				'__' => static fn( string $text ): string => $text,
 			],
 		);
 	}
